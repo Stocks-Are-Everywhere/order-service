@@ -1,0 +1,48 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: order-service
+
+  config:
+    import: classpath:/env.properties
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate.ddl-auto: create
+    show-sql: true
+    properties:
+      hibernate.criteria.literal_handling_mode: BIND
+      hibernate:
+        connection.CharSet: UTF-8
+        connection.characterEncoding: UTF-8
+        connection.useUnicode: true
+        format_sql: true
+
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+
+  logging.level:
+    org.hibernate.SQL: debug
+    org.hibernate.type: trace
+#    # WebSocket ???
+#    org.springframework.web.socket: DEBUG
+
+  ki:
+    appKey: ${KOREAINVEST_CLIENT_ID}
+    appSecret: ${KOREAINVEST_CLIENT_SECRET}
+    accountNo: ""
+
+webSocket:
+  server:
+    websocketKey: ${KOREAINVEST_WEBSOCKET_KEY}
+    url: ${KOREAINVEST_API_URL}
+
+jwt:
+  secret:
+    key: ${JWT_SECRET_KEY}
