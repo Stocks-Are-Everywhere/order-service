@@ -1,8 +1,6 @@
 package com.onseju.orderservice.listener;
 
-import com.onseju.orderservice.holding.domain.Holdings;
 import com.onseju.orderservice.holding.service.HoldingsRepository;
-import com.onseju.orderservice.holding.service.HoldingsService;
 import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.domain.OrderStatus;
 import com.onseju.orderservice.order.domain.Type;
@@ -29,8 +27,6 @@ class MatchedEventListenerIntegrationTest {
     private TradeHistoryRepository tradeHistoryRepository;
     @Autowired
     private OrderRepository orderRepository;
-    @Autowired
-    private HoldingsService holdingsService;
     @Autowired
     private EventMapper eventMapper;
 
@@ -70,28 +66,28 @@ class MatchedEventListenerIntegrationTest {
         orderRepository.save(buyOrder);
         orderRepository.save(sellOrder);
 
-        // 보유 주식 내역 저장
-        holdingsRepository.save(
-                Holdings.builder()
-                        .companyCode("005930")
-                        .quantity(new BigDecimal(100))
-                        .reservedQuantity(BigDecimal.ZERO)
-                        .averagePrice(new BigDecimal(1000))
-                        .totalPurchasePrice(new BigDecimal(100000))
-                        .accountId(1L)
-                        .build()
-        );
-
-        holdingsRepository.save(
-                Holdings.builder()
-                        .companyCode("005930")
-                        .quantity(new BigDecimal(100))
-                        .reservedQuantity(BigDecimal.ZERO)
-                        .averagePrice(new BigDecimal(1000))
-                        .totalPurchasePrice(new BigDecimal(100000))
-                        .accountId(2L)
-                        .build()
-        );
+//        // 보유 주식 내역 저장
+//        holdingsRepository.save(
+//                Holdings.builder()
+//                        .companyCode("005930")
+//                        .quantity(new BigDecimal(100))
+//                        .reservedQuantity(BigDecimal.ZERO)
+//                        .averagePrice(new BigDecimal(1000))
+//                        .totalPurchasePrice(new BigDecimal(100000))
+//                        .accountId(1L)
+//                        .build()
+//        );
+//
+//        holdingsRepository.save(
+//                Holdings.builder()
+//                        .companyCode("005930")
+//                        .quantity(new BigDecimal(100))
+//                        .reservedQuantity(BigDecimal.ZERO)
+//                        .averagePrice(new BigDecimal(1000))
+//                        .totalPurchasePrice(new BigDecimal(100000))
+//                        .accountId(2L)
+//                        .build()
+//        );
         Thread.sleep(1000);
         // TradeEvent 객체 준비
         matchedEvent = new MatchedEvent(

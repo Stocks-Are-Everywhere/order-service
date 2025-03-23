@@ -1,7 +1,6 @@
 package com.onseju.orderservice.holding.domain;
 
 import com.onseju.orderservice.global.entity.BaseEntity;
-import com.onseju.orderservice.order.domain.Type;
 import com.onseju.orderservice.holding.exception.HoldingsNotFoundException;
 import com.onseju.orderservice.holding.exception.InsufficientHoldingsException;
 import jakarta.persistence.Column;
@@ -18,8 +17,6 @@ import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.LocalDateTime;
 
 @Entity
 @Getter
@@ -39,20 +36,20 @@ public class Holdings extends BaseEntity {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(nullable = false, updatable = false)
+	@Column(nullable = false, insertable = false, updatable = false)
 	private String companyCode;
 
-	@Column(nullable = false)
+	@Column(nullable = false, insertable = false, updatable = false)
 	private BigDecimal quantity;
 
 	// 앞으로 거래될 예정인 주식의 수
-	@Column(nullable = false)
+	@Column(nullable = false, insertable = false, updatable = false)
 	private BigDecimal reservedQuantity;
 
-	@Column(nullable = false)
+	@Column(nullable = false, insertable = false, updatable = false)
 	private BigDecimal averagePrice;
 
-	@Column(nullable = false)
+	@Column(nullable = false, insertable = false, updatable = false)
 	private BigDecimal totalPurchasePrice;
 
 	@Column(nullable = false)
@@ -70,40 +67,7 @@ public class Holdings extends BaseEntity {
 		}
 	}
 
-	// 예약 주문 처리
-	public void reserveOrder(final BigDecimal reservedQuantity) {
-		this.reservedQuantity = this.reservedQuantity.add(reservedQuantity);
-	}
-
-	public void updateHoldings(final Type type, final BigDecimal updatePrice, final BigDecimal updateQuantity) {
-		if (type.isSell()) {
-			updateSellHoldings(updateQuantity);
-		} else {
-			updateBuyHoldings(updatePrice, updateQuantity);
-		}
-	}
-
 	private BigDecimal getAvailableQuantity() {
 		return this.quantity.subtract(this.reservedQuantity);
-	}
-
-	private void updateBuyHoldings(final BigDecimal updatePrice, final BigDecimal updateQuantity) {
-		this.quantity = this.quantity.add(updateQuantity);
-		this.totalPurchasePrice = this.totalPurchasePrice.add(updateQuantity.multiply(updatePrice));
-		this.averagePrice = this.totalPurchasePrice.divide(this.quantity, 4, RoundingMode.HALF_UP);
-	}
-
-	// 새로운 총 매수 금액 = 기존 총 매수 금액 − (평단가×매도 수량)
-	// 손익 = (매도가 - 평단가) × 매도 수량
-	private void updateSellHoldings(final BigDecimal updateQuantity) {
-		this.quantity = this.quantity.subtract(updateQuantity);
-		this.totalPurchasePrice = this.totalPurchasePrice.subtract(updateQuantity.multiply(this.averagePrice));
-
-		// 예약 수량 감소 (체결된 만큼 예약 수량에서 제거)
-		this.reservedQuantity = this.reservedQuantity.subtract(updateQuantity);
-
-		if (this.quantity.equals(BigDecimal.ZERO)) {
-			this.softDelete(LocalDateTime.now());
-		}
 	}
 }
