@@ -1,6 +1,5 @@
 package com.onseju.orderservice.listener;
 
-import com.onseju.orderservice.holding.service.HoldingsService;
 import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.service.repository.OrderRepository;
 import com.onseju.orderservice.tradehistory.service.TradeHistoryRepository;
@@ -16,7 +15,6 @@ import java.math.BigDecimal;
 public class MatchedEventListener {
 
     private final TradeHistoryRepository tradeHistoryRepository;
-    private final HoldingsService holdingsService;
     private final OrderRepository orderRepository;
     private final EventMapper eventMapper;
 
@@ -32,18 +30,10 @@ public class MatchedEventListener {
 
         // 3. 주문 내역에서 남은 양 차감
         updateRemainingQuantity(buyOrder, sellOrder, matchedEvent.quantity());
-
-        // 4. 보유 주식 처리
-        updateHoldings(sellOrder, buyOrder, matchedEvent);
     }
 
     private void updateRemainingQuantity(final Order buyOrder, final Order sellOrder, final BigDecimal quantity) {
         buyOrder.decreaseRemainingQuantity(quantity);
         sellOrder.decreaseRemainingQuantity(quantity);
-    }
-
-    private void updateHoldings(final Order buyOrder, final Order sellOrder, final MatchedEvent event) {
-        holdingsService.updateHoldingsAfterTrade(eventMapper.toUpdateHoldingsParams(buyOrder, event));
-        holdingsService.updateHoldingsAfterTrade(eventMapper.toUpdateHoldingsParams(sellOrder, event));
     }
 }

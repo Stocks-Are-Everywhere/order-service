@@ -43,9 +43,10 @@ public class OrderService {
 		validateClosingPrice(price, params.companyCode());
 
 		Account account = accountRepository.getByMemberId(params.memberId());
-		reserveForSellOrder(params, account.getId());
-		Order savedOrder = orderRepository.save(orderMapper.toEntity(params, account.getId()));
+		validateAccount(params, account);
+		validateHoldings(account.getId(), params);
 
+		Order savedOrder = orderRepository.save(orderMapper.toEntity(params, account.getId()));
 		applicationEventPublisher.publishEvent(orderMapper.toEvent(savedOrder));
 	}
 
@@ -58,16 +59,17 @@ public class OrderService {
 		}
 	}
 
-	private void reserveForSellOrder(final CreateOrderParams params, final Long accountId) {
-		if (params.type().isSell()) {
-			final Holdings holdings = holdingsRepository.getByAccountIdAndCompanyCode(accountId, params.companyCode());
-			validateHoldings(holdings, params.totalQuantity());
-			holdings.reserveOrder(params.totalQuantity());
+	private void validateAccount(final CreateOrderParams params, final Account account) {
+		if (params.type().isBuy()) {
+			account.validateDepositBalance(params.price().multiply(params.totalQuantity()));
 		}
 	}
 
-	private void validateHoldings(final Holdings holdings, final BigDecimal totalQuantity) {
-		holdings.validateExistHoldings();
-		holdings.validateEnoughHoldings(totalQuantity);
+	private void validateHoldings(final Long accountId, final CreateOrderParams params) {
+		if (params.type().isSell()) {
+			final Holdings holdings = holdingsRepository.getByAccountIdAndCompanyCode(accountId, params.companyCode());
+			holdings.validateExistHoldings();
+			holdings.validateEnoughHoldings(params.totalQuantity());
+		}
 	}
 }

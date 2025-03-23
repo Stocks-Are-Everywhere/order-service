@@ -10,4 +10,8 @@ public enum Type {
 	public boolean isSell() {
 		return this == LIMIT_SELL || this == MARKET_SELL;
 	}
+
+	public boolean isBuy() {
+		return this == LIMIT_BUY || this == MARKET_BUY;
+	}
 }

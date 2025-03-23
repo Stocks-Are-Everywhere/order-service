@@ -23,7 +23,6 @@ public class FakeHoldingsRepository implements HoldingsRepository {
                 .orElseThrow(HoldingsNotFoundException::new);
     }
 
-    @Override
     public Holdings save(Holdings holdings) {
         if (hasElement(holdings)) {
             elements.stream()
@@ -53,7 +52,6 @@ public class FakeHoldingsRepository implements HoldingsRepository {
                 .anyMatch(o -> o.getId().equals(holdings.getId()));
     }
 
-    @Override
     public Optional<Holdings> findByAccountIdAndCompanyCode(Long accountId, String companyCode) {
         return elements.stream()
                 .filter(value ->

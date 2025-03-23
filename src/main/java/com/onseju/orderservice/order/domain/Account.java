@@ -1,6 +1,7 @@
 package com.onseju.orderservice.order.domain;
 
 import com.onseju.orderservice.global.entity.BaseEntity;
+import com.onseju.orderservice.order.exception.InsufficientBalanceException;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -29,4 +30,15 @@ public class Account extends BaseEntity {
 
 	@JoinColumn(nullable = false)
 	private Long memberId;
+
+	public void validateDepositBalance(final BigDecimal totalPrice) {
+		final BigDecimal availableBalance = getAvailableBalance();
+		if (availableBalance.compareTo(totalPrice) < 0) {
+			throw new InsufficientBalanceException();
+		}
+	}
+
+	private BigDecimal getAvailableBalance() {
+		return this.balance.subtract(this.reservedBalance);
+	}
 }
