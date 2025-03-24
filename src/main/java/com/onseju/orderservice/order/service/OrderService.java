@@ -2,14 +2,10 @@ package com.onseju.orderservice.order.service;
 
 import com.onseju.orderservice.company.domain.Company;
 import com.onseju.orderservice.company.service.CompanyRepository;
-import com.onseju.orderservice.holding.domain.Holdings;
-import com.onseju.orderservice.holding.service.HoldingsRepository;
-import com.onseju.orderservice.order.domain.Account;
 import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.exception.PriceOutOfRangeException;
 import com.onseju.orderservice.order.mapper.OrderMapper;
 import com.onseju.orderservice.order.service.dto.CreateOrderParams;
-import com.onseju.orderservice.order.service.repository.AccountRepository;
 import com.onseju.orderservice.order.service.repository.OrderRepository;
 import com.onseju.orderservice.order.service.validator.OrderValidator;
 import lombok.RequiredArgsConstructor;
@@ -27,8 +23,6 @@ public class OrderService {
 
 	private final OrderRepository orderRepository;
 	private final CompanyRepository companyRepository;
-	private final HoldingsRepository holdingsRepository;
-	private final AccountRepository accountRepository;
 	private final OrderMapper orderMapper;
 	private final ApplicationEventPublisher applicationEventPublisher;
 
@@ -42,11 +36,10 @@ public class OrderService {
 		// 종가 기준 검증
 		validateClosingPrice(price, params.companyCode());
 
-		Account account = accountRepository.getByMemberId(params.memberId());
-		validateAccount(params, account);
-		validateHoldings(account.getId(), params);
-
-		Order savedOrder = orderRepository.save(orderMapper.toEntity(params, account.getId()));
+		// TODO: REST 통신 필요
+		// Account Id 값 받아와야 함
+		Long accountId = 1L;
+		Order savedOrder = orderRepository.save(orderMapper.toEntity(params, accountId));
 		applicationEventPublisher.publishEvent(orderMapper.toEvent(savedOrder));
 	}
 
@@ -56,20 +49,6 @@ public class OrderService {
 
 		if (!company.isWithinClosingPriceRange(price)) {
 			throw new PriceOutOfRangeException();
-		}
-	}
-
-	private void validateAccount(final CreateOrderParams params, final Account account) {
-		if (params.type().isBuy()) {
-			account.validateDepositBalance(params.price().multiply(params.totalQuantity()));
-		}
-	}
-
-	private void validateHoldings(final Long accountId, final CreateOrderParams params) {
-		if (params.type().isSell()) {
-			final Holdings holdings = holdingsRepository.getByAccountIdAndCompanyCode(accountId, params.companyCode());
-			holdings.validateExistHoldings();
-			holdings.validateEnoughHoldings(params.totalQuantity());
 		}
 	}
 }

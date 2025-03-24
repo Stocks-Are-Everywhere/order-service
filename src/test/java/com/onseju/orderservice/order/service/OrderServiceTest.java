@@ -1,17 +1,11 @@
 package com.onseju.orderservice.order.service;
 
-import com.onseju.orderservice.fake.FakeHoldingsRepository;
 import com.onseju.orderservice.fake.FakeOrderRepository;
-import com.onseju.orderservice.holding.domain.Holdings;
-import com.onseju.orderservice.holding.exception.HoldingsNotFoundException;
-import com.onseju.orderservice.holding.exception.InsufficientHoldingsException;
-import com.onseju.orderservice.order.controller.request.OrderRequest;
 import com.onseju.orderservice.order.domain.Type;
 import com.onseju.orderservice.order.exception.OrderPriceQuotationException;
 import com.onseju.orderservice.order.exception.PriceOutOfRangeException;
 import com.onseju.orderservice.order.mapper.OrderMapper;
 import com.onseju.orderservice.order.service.dto.CreateOrderParams;
-import com.onseju.orderservice.stub.StubAccountRepository;
 import com.onseju.orderservice.stub.StubCompanyRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -30,11 +24,7 @@ class OrderServiceTest {
 
 	OrderService orderService;
 
-	StubAccountRepository accountRepository = new StubAccountRepository();;
-
 	StubCompanyRepository companyRepository = new StubCompanyRepository();
-
-	FakeHoldingsRepository holdingsRepository = new FakeHoldingsRepository();
 
 	FakeOrderRepository orderRepository = new FakeOrderRepository();
 
@@ -45,7 +35,7 @@ class OrderServiceTest {
 	@BeforeEach
 	void setUp() {
 		applicationEventPublisher = Mockito.mock(ApplicationEventPublisher.class);
-		orderService = new OrderService(orderRepository, companyRepository, holdingsRepository, accountRepository, orderMapper, applicationEventPublisher);
+		orderService = new OrderService(orderRepository, companyRepository, orderMapper, applicationEventPublisher);
 	}
 
 	@Nested
@@ -132,49 +122,6 @@ class OrderServiceTest {
 		}
 	}
 
-	@Nested
-	@DisplayName("매도 주문일 경우 보유 주식 개수를 확인하고, 예약 주문 개수를 저장한다.")
-	class SellOrderReservation {
-
-		@Test
-		@DisplayName("매도 주문일 경우, 입력한 종목에 대한 보유 주식이 없을 경우 예외가 발생한다.")
-		void throwExceptionWhenSellingStockWithoutHoldingAny() {
-			// given
-			CreateOrderParams params = createCreateOrderParams(Type.LIMIT_SELL, new BigDecimal(1), new BigDecimal(1000), 1L);
-
-			// when, then
-			assertThatThrownBy(() -> orderService.placeOrder(params))
-					.isInstanceOf(HoldingsNotFoundException.class);
-		}
-
-		@Test
-		@DisplayName("매도 주문일 경우, 입력한 종목에 대한 보유 주식의 개수가 부족할 경우 예외가 발생한다.")
-		void throwExceptionWhenSellingExceedingOwnedQuantity() {
-			// given
-			CreateOrderParams params = createCreateOrderParams(Type.LIMIT_SELL, new BigDecimal(100), new BigDecimal(1000), 1L);
-			Holdings holdings = createHoldings(new BigDecimal(10));
-			holdingsRepository.save(holdings);
-
-			// when, then
-			assertThatThrownBy(() -> orderService.placeOrder(params))
-					.isInstanceOf(InsufficientHoldingsException.class);
-		}
-	}
-
-	private OrderRequest createOrderRequest(
-		Type type,
-		BigDecimal totalQuantity,
-		BigDecimal price
-	) {
-		return new OrderRequest(
-			"005930",
-			type,
-			totalQuantity,
-			price,
-			LocalDateTime.of(2025, 1, 1, 1, 1)
-		);
-	}
-
 	private CreateOrderParams createCreateOrderParams(
 			Type type,
 			BigDecimal totalQuantity,
@@ -189,16 +136,5 @@ class OrderServiceTest {
 				LocalDateTime.of(2025, 1, 1, 1, 1),
 				memberId
 		);
-	}
-
-	private Holdings createHoldings(BigDecimal quantity) {
-		return Holdings.builder()
-				.companyCode("005930")
-				.quantity(quantity)
-				.reservedQuantity(new BigDecimal(0))
-				.averagePrice(new BigDecimal(1000))
-				.totalPurchasePrice(new BigDecimal(10000))
-				.accountId(1L)
-				.build();
 	}
 }
