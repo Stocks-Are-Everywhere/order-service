@@ -1,5 +1,6 @@
 package com.onseju.orderservice.order.mapper;
 
+import com.onseju.orderservice.client.dto.ReservationOrderRequest;
 import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.domain.OrderStatus;
 import com.onseju.orderservice.order.service.dto.CreateOrderParams;
@@ -35,6 +36,16 @@ public class OrderMapper {
                 order.getPrice(),
                 order.getCreatedDateTime(),
                 order.getAccountId()
+        );
+    }
+
+    public ReservationOrderRequest toReservationOrderRequest(final CreateOrderParams params) {
+        return new ReservationOrderRequest(
+                params.memberId(),
+                params.companyCode(),
+                params.type(),
+                params.price(),
+                params.totalQuantity()
         );
     }
 }

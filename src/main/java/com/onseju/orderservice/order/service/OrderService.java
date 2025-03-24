@@ -1,5 +1,7 @@
 package com.onseju.orderservice.order.service;
 
+import com.onseju.orderservice.client.UserServiceClients;
+import com.onseju.orderservice.client.dto.OrderValidationResponse;
 import com.onseju.orderservice.company.domain.Company;
 import com.onseju.orderservice.company.service.CompanyRepository;
 import com.onseju.orderservice.order.domain.Order;
@@ -24,6 +26,7 @@ public class OrderService {
 	private final OrderRepository orderRepository;
 	private final CompanyRepository companyRepository;
 	private final OrderMapper orderMapper;
+	private final UserServiceClients userServiceClients;
 	private final ApplicationEventPublisher applicationEventPublisher;
 
 	@Transactional
@@ -36,9 +39,10 @@ public class OrderService {
 		// 종가 기준 검증
 		validateClosingPrice(price, params.companyCode());
 
-		// TODO: REST 통신 필요
-		// Account Id 값 받아와야 함
-		Long accountId = 1L;
+
+		// user-service와 rest 통신
+		Long accountId = getAccountIdFromUserService(params);
+
 		Order savedOrder = orderRepository.save(orderMapper.toEntity(params, accountId));
 		applicationEventPublisher.publishEvent(orderMapper.toEvent(savedOrder));
 	}
@@ -50,5 +54,12 @@ public class OrderService {
 		if (!company.isWithinClosingPriceRange(price)) {
 			throw new PriceOutOfRangeException();
 		}
+	}
+
+	// 외부의 user-service와 rest 통신
+	private Long getAccountIdFromUserService(final CreateOrderParams params) {
+		OrderValidationResponse clientsResponse = userServiceClients.validateOrderAndGetAccountId(
+				orderMapper.toReservationOrderRequest(params)).getBody();
+		return clientsResponse.accountId();
 	}
 }
