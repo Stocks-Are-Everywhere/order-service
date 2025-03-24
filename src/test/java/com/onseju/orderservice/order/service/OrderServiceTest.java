@@ -1,5 +1,7 @@
 package com.onseju.orderservice.order.service;
 
+import com.onseju.orderservice.client.UserServiceClients;
+import com.onseju.orderservice.client.dto.OrderValidationResponse;
 import com.onseju.orderservice.fake.FakeOrderRepository;
 import com.onseju.orderservice.order.domain.Type;
 import com.onseju.orderservice.order.exception.OrderPriceQuotationException;
@@ -13,29 +15,32 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.client.HttpClientErrorException;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 class OrderServiceTest {
 
 	OrderService orderService;
-
 	StubCompanyRepository companyRepository = new StubCompanyRepository();
-
 	FakeOrderRepository orderRepository = new FakeOrderRepository();
-
 	OrderMapper orderMapper = new OrderMapper();
-
 	ApplicationEventPublisher applicationEventPublisher;
+	UserServiceClients userServiceClients;
 
 	@BeforeEach
 	void setUp() {
 		applicationEventPublisher = Mockito.mock(ApplicationEventPublisher.class);
-		orderService = new OrderService(orderRepository, companyRepository, orderMapper, applicationEventPublisher);
+		userServiceClients = Mockito.mock(UserServiceClients.class);
+		orderService = new OrderService(orderRepository, companyRepository, orderMapper, userServiceClients, applicationEventPublisher);
 	}
 
 	@Nested
@@ -45,6 +50,8 @@ class OrderServiceTest {
 		@DisplayName("TC20.2.1 주문 생성 테스트")
 		void testPlaceOrder() {
 			CreateOrderParams params = createCreateOrderParams(Type.LIMIT_BUY, new BigDecimal(1), new BigDecimal(1000), 1L);
+			when(userServiceClients.validateOrderAndGetAccountId(any()))
+					.thenReturn(new ResponseEntity<>(new OrderValidationResponse(1L), HttpStatus.OK));
 
 			assertThatNoException().isThrownBy(() -> orderService.placeOrder(params));
 		}
@@ -60,6 +67,8 @@ class OrderServiceTest {
 			// given
 			BigDecimal price = new BigDecimal(1300);
 			CreateOrderParams params = createCreateOrderParams(Type.LIMIT_BUY, new BigDecimal(1), price, 1L);
+			when(userServiceClients.validateOrderAndGetAccountId(any()))
+					.thenReturn(new ResponseEntity<>(new OrderValidationResponse(1L), HttpStatus.OK));
 
 			// when, then
 			assertThatNoException().isThrownBy(() -> orderService.placeOrder(params));
@@ -82,6 +91,8 @@ class OrderServiceTest {
 			// given
 			BigDecimal price = new BigDecimal(700);
 			CreateOrderParams params = createCreateOrderParams(Type.LIMIT_BUY, new BigDecimal(10), price, 1L);
+			when(userServiceClients.validateOrderAndGetAccountId(any()))
+					.thenReturn(new ResponseEntity<>(new OrderValidationResponse(1L), HttpStatus.OK));
 
 			// when, then
 			assertThatNoException().isThrownBy(() -> orderService.placeOrder(params));
@@ -119,6 +130,25 @@ class OrderServiceTest {
 
 			// when, then
 			assertThatThrownBy(() -> orderService.placeOrder(params)).isInstanceOf(OrderPriceQuotationException.class);
+		}
+	}
+
+	@Nested
+	@DisplayName("user-service와의 통신 테스트")
+	public class communicationWithUserService {
+
+		@Test
+		@DisplayName("")
+		void communicationWithUserService() {
+			// given
+			BigDecimal price = new BigDecimal(1300);
+			CreateOrderParams params = createCreateOrderParams(Type.LIMIT_BUY, new BigDecimal(1), price, 1L);
+			when(userServiceClients.validateOrderAndGetAccountId(any()))
+					.thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
+
+			// when, then
+			assertThatThrownBy(() -> orderService.placeOrder(params))
+					.isInstanceOf(HttpClientErrorException.class);
 		}
 	}
 

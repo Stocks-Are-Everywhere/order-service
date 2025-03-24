@@ -11,5 +11,5 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface UserServiceClients {
 
     @PostMapping("/api/members/order-reservation")
-    ResponseEntity<OrderValidationResponse> validateOrderAndGetAccountId(@RequestBody ReservationOrderRequest request);
+    ResponseEntity<OrderValidationResponse>     validateOrderAndGetAccountId(@RequestBody ReservationOrderRequest request);
 }

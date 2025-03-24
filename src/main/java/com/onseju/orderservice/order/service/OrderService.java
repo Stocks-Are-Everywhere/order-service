@@ -39,7 +39,6 @@ public class OrderService {
 		// 종가 기준 검증
 		validateClosingPrice(price, params.companyCode());
 
-
 		// user-service와 rest 통신
 		Long accountId = getAccountIdFromUserService(params);
 
