@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.onseju.orderservice.grpc";
+option java_outer_classname = "OrderValidationProto";
+
+// 서비스 정의
+service OrderValidationService {
+  // 주문 유효성 검증 메서드
+  rpc ValidateOrder (GrpcValidateRequest) returns (GrpcValidateResponse) {}
+}
+
+// 요청 메시지
+
+enum OrderType {
+  UNKNOWN = 0;  // proto3에서는 첫 번째 값이 기본값이어야 함
+  LIMIT_BUY = 1;
+  LIMIT_SELL = 2;
+  MARKET_BUY = 3;
+  MARKET_SELL = 4;
+  // 기타 필요한 enum 값들...
+}
+
+message GrpcValidateRequest {
+  string company_code = 1;
+  OrderType type = 2;
+  string total_quantity = 3;  // BigDecimal은 proto3에서 직접 지원하지 않으므로 string으로 표현
+  string price = 4;           // BigDecimal은 proto3에서 직접 지원하지 않으므로 string으로 표현
+  string now = 5;             // LocalDateTime은 proto3에서 직접 지원하지 않으므로 ISO-8601 형식의 string으로 표현
+  int64 member_id = 6;
+}
+
+message GrpcValidateResponse {
+  bool is_valid = 1;
+  string message = 2;
+  int64 account_id = 3;
+  OrderType type = 4;
+}
+
+
+
