@@ -2,7 +2,7 @@ package com.onseju.orderservice.tradehistory.dto;
 
 import java.math.BigDecimal;
 
-public record TradeHistoryResponse(
+public record TradeHistoryDto(
 		String companyCode,
 		Long sellOrderId,
 		Long buyOrderId,

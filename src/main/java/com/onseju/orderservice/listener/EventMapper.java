@@ -1,19 +1,28 @@
 package com.onseju.orderservice.listener;
 
-import com.onseju.orderservice.tradehistory.domain.TradeHistory;
+import com.onseju.orderservice.order.dto.MatchedOrderDto;
+import com.onseju.orderservice.tradehistory.dto.TradeHistoryDto;
 import org.springframework.stereotype.Component;
 
 @Component
 public class EventMapper {
 
-    public TradeHistory toTradeHistory(final MatchedEvent matchedEvent) {
-        return TradeHistory.builder()
-                .companyCode(matchedEvent.companyCode())
-                .sellOrderId(matchedEvent.sellOrderId())
-                .buyOrderId(matchedEvent.buyOrderId())
-                .price(matchedEvent.price())
-                .quantity(matchedEvent.quantity())
-                .tradeTime(matchedEvent.tradeAt())
-                .build();
+    public TradeHistoryDto toTradeHistoryDto(final MatchedEvent matchedEvent) {
+        return new TradeHistoryDto(
+                matchedEvent.companyCode(),
+                matchedEvent.sellOrderId(),
+                matchedEvent.buyOrderId(),
+                matchedEvent.quantity(),
+                matchedEvent.price(),
+                matchedEvent.tradeAt()
+        );
+    }
+
+    public MatchedOrderDto toMatchedOrderDto(final MatchedEvent matchedEvent) {
+        return new MatchedOrderDto(
+                matchedEvent.buyOrderId(),
+                matchedEvent.sellOrderId(),
+                matchedEvent.quantity()
+        );
     }
 }

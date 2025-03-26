@@ -5,6 +5,7 @@ import com.onseju.orderservice.client.dto.OrderValidationResponse;
 import com.onseju.orderservice.company.domain.Company;
 import com.onseju.orderservice.company.service.CompanyRepository;
 import com.onseju.orderservice.order.domain.Order;
+import com.onseju.orderservice.order.dto.MatchedOrderDto;
 import com.onseju.orderservice.order.exception.PriceOutOfRangeException;
 import com.onseju.orderservice.order.mapper.OrderMapper;
 import com.onseju.orderservice.order.service.dto.CreateOrderParams;
@@ -60,5 +61,16 @@ public class OrderService {
 		OrderValidationResponse clientsResponse = userServiceClients.validateOrderAndGetAccountId(
 				orderMapper.toReservationOrderRequest(params)).getBody();
 		return clientsResponse.accountId();
+	}
+
+	@Transactional
+	public void updateRemainingQuantity(final MatchedOrderDto dto) {
+		// 1. 주문 내역 조회
+		Order buyOrder = orderRepository.getById(dto.buyOrderId());
+		Order sellOrder = orderRepository.getById(dto.sellOrderId());
+
+		// 2. 주문 내역에서 남은 양 차감
+		buyOrder.decreaseRemainingQuantity(dto.quantity());
+		sellOrder.decreaseRemainingQuantity(dto.quantity());
 	}
 }

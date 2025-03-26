@@ -1,7 +1,7 @@
 package com.onseju.orderservice.tradehistory.mapper;
 
 import com.onseju.orderservice.tradehistory.domain.TradeHistory;
-import com.onseju.orderservice.tradehistory.dto.TradeHistoryResponse;
+import com.onseju.orderservice.tradehistory.dto.TradeHistoryDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -19,7 +19,7 @@ class TradeHistoryMapperTest {
     @DisplayName("체결관련 dto를 TradeHistory 엔티티로 변환한다.")
     void toEntity() {
         // given
-        TradeHistoryResponse tradeHistoryResponse = new TradeHistoryResponse(
+        TradeHistoryDto tradeHistoryResponse = new TradeHistoryDto(
                 "005930",
                 1L,
                 2L,
