@@ -5,17 +5,14 @@ spring:
   application:
     name: order-service
 
-  config:
-    import: classpath:/env.properties
-
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${DB_URL}
-    username: ${DB_USERNAME}
-    password: ${DB_PASSWORD}
+    url: jdbc:mysql://localhost:3301/order-onseju
+    username: root
+    password: root
 
   jpa:
-    hibernate.ddl-auto: create
+    hibernate.ddl-auto: update
     show-sql: true
     properties:
       hibernate.criteria.literal_handling_mode: BIND
@@ -28,21 +25,16 @@ spring:
     database-platform: org.hibernate.dialect.MySQL8Dialect
 
   logging.level:
-    org.hibernate.SQL: debug
-    org.hibernate.type: trace
-#    # WebSocket ???
-#    org.springframework.web.socket: DEBUG
+    org.hibernate.SQL: info
+    org.hibernate.type: info
 
-  ki:
-    appKey: ${KOREAINVEST_CLIENT_ID}
-    appSecret: ${KOREAINVEST_CLIENT_SECRET}
-    accountNo: ""
-
-webSocket:
-  server:
-    websocketKey: ${KOREAINVEST_WEBSOCKET_KEY}
-    url: ${KOREAINVEST_API_URL}
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: admin123
+    virtual-host: /
 
 jwt:
   secret:
-    key: ${JWT_SECRET_KEY}
+    key: 7Iqk7YyM66W07YOA7L2U65Sp7YG065+9U3ByaW5n6rCV7J2Y7Yqc7YSw7LWc7JuQ67mI7J6F64uI64ukLg==

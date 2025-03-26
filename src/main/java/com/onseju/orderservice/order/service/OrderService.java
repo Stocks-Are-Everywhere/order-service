@@ -1,24 +1,27 @@
 package com.onseju.orderservice.order.service;
 
-import com.onseju.orderservice.company.domain.Company;
-import com.onseju.orderservice.company.service.CompanyRepository;
-import com.onseju.orderservice.holding.domain.Holdings;
-import com.onseju.orderservice.holding.service.HoldingsRepository;
-import com.onseju.orderservice.order.domain.Account;
-import com.onseju.orderservice.order.domain.Order;
-import com.onseju.orderservice.order.exception.PriceOutOfRangeException;
-import com.onseju.orderservice.order.mapper.OrderMapper;
-import com.onseju.orderservice.order.service.dto.CreateOrderParams;
-import com.onseju.orderservice.order.service.repository.AccountRepository;
-import com.onseju.orderservice.order.service.repository.OrderRepository;
-import com.onseju.orderservice.order.service.validator.OrderValidator;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
+import java.math.BigDecimal;
+
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
+import com.onseju.orderservice.company.domain.Company;
+import com.onseju.orderservice.company.service.repository.CompanyRepository;
+import com.onseju.orderservice.events.CreatedEvent;
+import com.onseju.orderservice.events.OrderBookSyncedEvent;
+import com.onseju.orderservice.events.publisher.OrderEventPublisher;
+import com.onseju.orderservice.order.client.UserServiceClient;
+import com.onseju.orderservice.order.domain.Order;
+import com.onseju.orderservice.order.dto.AfterTradeOrderDto;
+import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
+import com.onseju.orderservice.order.exception.PriceOutOfRangeException;
+import com.onseju.orderservice.order.mapper.OrderMapper;
+import com.onseju.orderservice.order.service.repository.OrderRepository;
+import com.onseju.orderservice.order.service.validator.OrderValidator;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -27,31 +30,50 @@ public class OrderService {
 
 	private final OrderRepository orderRepository;
 	private final CompanyRepository companyRepository;
-	private final HoldingsRepository holdingsRepository;
-	private final AccountRepository accountRepository;
+	private final OrderEventPublisher eventPublisher;
+	private final UserServiceClient userServiceClient;
 	private final OrderMapper orderMapper;
-	private final ApplicationEventPublisher applicationEventPublisher;
+
+	private final SimpMessagingTemplate messagingTemplate;
 
 	@Transactional
-	public void placeOrder(final CreateOrderParams params) {
-		// 지정가 주문 가격 견적 유효성 검증
-		final BigDecimal price = params.price();
-		final OrderValidator validator = OrderValidator.getUnitByPrice(price);
-		validator.isValidPrice(price);
+	public void placeOrder(final BeforeTradeOrderDto dto) {
+		// 주문 유효성 검증
+		validateOrder(dto.price(), dto.companyCode());
 
-		// 종가 기준 검증
-		validateClosingPrice(price, params.companyCode());
+		// Lock
+		// 사용자 유효성 검증
+		userServiceClient.validateAccountAndHoldings(dto);
+		// unLock
 
-		Account account = accountRepository.getByMemberId(params.memberId());
-		validateAccount(params, account);
-		validateHoldings(account.getId(), params);
+		// 주문 저장
+		final Order order = orderMapper.toEntity(dto, dto.accountId());
+		final Order savedOrder = orderRepository.save(order);
 
-		Order savedOrder = orderRepository.save(orderMapper.toEntity(params, account.getId()));
-		applicationEventPublisher.publishEvent(orderMapper.toEvent(savedOrder));
+		// 주문 생성 이벤트 발행
+		final CreatedEvent event = orderMapper.toEvent(savedOrder);
+		eventPublisher.publishOrderCreated(event);
 	}
 
-	// 종가 기준 가격 검증
-	private void validateClosingPrice(final BigDecimal price, final String companyCode) {
+	/**
+	 * 주문 예약 수량 업데이트
+	 */
+	@Transactional
+	public void updateRemainingQuantity(final AfterTradeOrderDto dto) {
+		final Order order = orderRepository.getById(dto.orderId());
+		order.decreaseRemainingQuantity(dto.quantity());
+		orderRepository.save(order);
+	}
+
+	/**
+	 * 주문 유효성 검증
+	 */
+	private void validateOrder(final BigDecimal price, final String companyCode) {
+		// 호가 단위 검증
+		OrderValidator validator = OrderValidator.getUnitByPrice(price);
+		validator.isValidPrice(price);
+
+		// 전날 종가 검증
 		final Company company = companyRepository.findByIsuSrtCd(companyCode);
 
 		if (!company.isWithinClosingPriceRange(price)) {
@@ -59,17 +81,10 @@ public class OrderService {
 		}
 	}
 
-	private void validateAccount(final CreateOrderParams params, final Account account) {
-		if (params.type().isBuy()) {
-			account.validateDepositBalance(params.price().multiply(params.totalQuantity()));
-		}
-	}
-
-	private void validateHoldings(final Long accountId, final CreateOrderParams params) {
-		if (params.type().isSell()) {
-			final Holdings holdings = holdingsRepository.getByAccountIdAndCompanyCode(accountId, params.companyCode());
-			holdings.validateExistHoldings();
-			holdings.validateEnoughHoldings(params.totalQuantity());
-		}
+	/**
+	 * 주문장 업데이트 (매칭 엔진으로부터 수신)
+	 */
+	public void broadcastOrderBookUpdate(final OrderBookSyncedEvent event) {
+		messagingTemplate.convertAndSend("/topic/orderbook/" + event.companyCode(), event);
 	}
 }

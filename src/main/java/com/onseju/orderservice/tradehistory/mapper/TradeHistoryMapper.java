@@ -1,20 +1,21 @@
 package com.onseju.orderservice.tradehistory.mapper;
 
-import com.onseju.orderservice.tradehistory.domain.TradeHistory;
-import com.onseju.orderservice.tradehistory.dto.TradeHistoryResponse;
 import org.springframework.stereotype.Component;
+
+import com.onseju.orderservice.events.MatchedEvent;
+import com.onseju.orderservice.tradehistory.domain.TradeHistory;
 
 @Component
 public class TradeHistoryMapper {
 
-    public TradeHistory toEntity(final TradeHistoryResponse tradeHistoryResponse) {
-        return TradeHistory.builder()
-                .companyCode(tradeHistoryResponse.companyCode())
-                .sellOrderId(tradeHistoryResponse.sellOrderId())
-                .buyOrderId(tradeHistoryResponse.buyOrderId())
-                .price(tradeHistoryResponse.price())
-                .quantity(tradeHistoryResponse.quantity())
-                .tradeTime(tradeHistoryResponse.tradeTime())
-                .build();
-    }
+	public TradeHistory toEntity(final MatchedEvent event) {
+		return TradeHistory.builder()
+				.companyCode(event.companyCode())
+				.sellOrderId(event.sellOrderId())
+				.buyOrderId(event.buyOrderId())
+				.price(event.price())
+				.quantity(event.quantity())
+				.tradeTime(event.tradeAt())
+				.build();
+	}
 }

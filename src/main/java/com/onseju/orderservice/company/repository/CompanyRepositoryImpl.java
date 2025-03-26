@@ -1,12 +1,14 @@
 package com.onseju.orderservice.company.repository;
 
-import com.onseju.orderservice.company.domain.Company;
-import com.onseju.orderservice.company.exception.CompanyNotFound;
-import com.onseju.orderservice.company.service.CompanyRepository;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import com.onseju.orderservice.company.domain.Company;
+import com.onseju.orderservice.company.exception.CompanyNotFound;
+import com.onseju.orderservice.company.service.repository.CompanyRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 @Component
