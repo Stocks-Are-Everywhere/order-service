@@ -1,18 +1,19 @@
 package com.onseju.orderservice.tradehistory.service;
 
-import com.onseju.orderservice.fake.FakeTradeHistoryRepository;
-import com.onseju.orderservice.tradehistory.domain.TradeHistory;
-import com.onseju.orderservice.tradehistory.dto.TradeHistoryResponse;
-import com.onseju.orderservice.tradehistory.mapper.TradeHistoryMapper;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import com.onseju.orderservice.events.mapper.TradeHistoryMapper;
+import com.onseju.orderservice.fake.FakeTradeHistoryRepository;
+import com.onseju.orderservice.tradehistory.domain.TradeHistory;
+import com.onseju.orderservice.tradehistory.dto.TradeHistoryResponse;
 
 class TradeHistoryServiceTest {
 
@@ -29,7 +30,7 @@ class TradeHistoryServiceTest {
 	@Test
 	@DisplayName("체결 내역을 저장한다.")
 	void save() {
-	    // given
+		// given
 		TradeHistoryResponse tradeHistoryResponse = new TradeHistoryResponse(
 				"005930",
 				1L,
@@ -41,7 +42,7 @@ class TradeHistoryServiceTest {
 		// when
 		tradeHistoryService.saveTradeHistory(tradeHistoryResponse);
 
-	    // then
+		// then
 		TradeHistory saved = tradeHistoryRepository.findById(1L);
 		assertThat(saved).isNotNull();
 		assertThat(saved.getCompanyCode()).isEqualTo(tradeHistoryResponse.companyCode());

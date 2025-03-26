@@ -1,12 +1,15 @@
 package com.onseju.orderservice.company.service;
 
-import com.onseju.orderservice.company.controller.response.CompanySearchResponse;
-import com.onseju.orderservice.company.mapper.CompanyMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import com.onseju.orderservice.company.controller.response.CompanySearchResponse;
+import com.onseju.orderservice.company.mapper.CompanyMapper;
+import com.onseju.orderservice.company.service.repository.CompanyRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +27,7 @@ public class CompanyService {
 	 */
 	public List<CompanySearchResponse> searchCompanies(final String query) {
 		return companyRepository.findByIsuNmContainingOrIsuAbbrvContainingOrIsuEngNmContainingOrIsuSrtCdContaining(
-				query)
+						query)
 				.stream()
 				.map(companyMapper::toCompanySearchResponse)
 				.toList();
