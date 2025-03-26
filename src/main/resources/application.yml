@@ -1,9 +1,18 @@
 server:
   port: 8081
+  http2:
+    enabled: true
 
 spring:
   application:
     name: order-service
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: guest
+    password: guest
+  main:
+    allow-bean-definition-overriding: true
 
   config:
     import: classpath:/env.properties
@@ -15,7 +24,7 @@ spring:
     password: ${DB_PASSWORD}
 
   jpa:
-    hibernate.ddl-auto: create
+    hibernate.ddl-auto: update
     show-sql: true
     properties:
       hibernate.criteria.literal_handling_mode: BIND
@@ -46,3 +55,14 @@ webSocket:
 jwt:
   secret:
     key: ${JWT_SECRET_KEY}
+
+services:
+  user-service:
+    url: http://user-service:8083
+
+grpc:
+  client:
+    order-service:
+      address: static://user-service:9090
+      negotiation-type: PLAINTEXT
+

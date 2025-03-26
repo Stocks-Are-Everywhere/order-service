@@ -55,19 +55,7 @@ public class Holdings extends BaseEntity {
 	@Column(nullable = false)
 	private Long accountId;
 
-	public void validateEnoughHoldings(final BigDecimal checkQuantity) {
-		if (getAvailableQuantity().compareTo(checkQuantity) < 0) {
-			throw new InsufficientHoldingsException();
-		}
-	}
 
-	public void validateExistHoldings() {
-		if (this.quantity.equals(BigDecimal.ZERO)) {
-			throw new HoldingsNotFoundException();
-		}
-	}
 
-	private BigDecimal getAvailableQuantity() {
-		return this.quantity.subtract(this.reservedQuantity);
-	}
+
 }

@@ -15,4 +15,14 @@ public class TradeHistoryRepositoryImpl implements TradeHistoryRepository {
 	public TradeHistory save(final TradeHistory tradeHistory) {
 		return tradeHistoryJpaRepository.save(tradeHistory);
 	}
+
+	@Override
+	public void deleteAll() {
+		tradeHistoryJpaRepository.deleteAll();
+	}
+
+	@Override
+	public TradeHistory findByBuyOrderIdAndSellOrderId(Long buyOrderId, Long sellOrderId) {
+		return tradeHistoryJpaRepository.findByBuyOrderIdAndSellOrderId(buyOrderId, sellOrderId);
+	}
 }

@@ -31,4 +31,9 @@ public class OrderRepositoryImpl implements OrderRepository {
 				.findById(id)
 				.orElseThrow(OrderNotFoundException::new);
 	}
+
+	@Override
+	public void deleteAll() {
+		orderJpaRepository.deleteAll();
+	}
 }

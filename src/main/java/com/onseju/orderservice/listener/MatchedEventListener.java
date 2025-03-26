@@ -3,7 +3,11 @@ package com.onseju.orderservice.listener;
 import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.service.repository.OrderRepository;
 import com.onseju.orderservice.tradehistory.service.TradeHistoryRepository;
+
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -19,7 +23,8 @@ public class MatchedEventListener {
     private final EventMapper eventMapper;
 
     @Async
-    @TransactionalEventListener
+    @RabbitListener(queues = "matched.event.queue")
+    @Transactional
     public void createTradeHistoryEvent(final MatchedEvent matchedEvent) {
         // 1. 주문 내역 조회
         Order buyOrder = orderRepository.getById(matchedEvent.buyOrderId());

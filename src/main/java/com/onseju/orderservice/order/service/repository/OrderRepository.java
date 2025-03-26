@@ -11,4 +11,6 @@ public interface OrderRepository {
 	Optional<Order> findById(final Long id);
 
 	Order getById(final Long id);
+
+	void deleteAll();
 }

@@ -21,9 +21,9 @@ public class OrderController {
 
 	@PostMapping
 	public ResponseEntity<Void> received(
-			@RequestBody final OrderRequest request,
-			@AuthenticationPrincipal final UserDetailsImpl user
-	) {
+			@RequestBody final OrderRequest request
+			// @AuthenticationPrincipal final UserDetailsImpl user
+	) throws Exception {
 		orderService.placeOrder(
 			new CreateOrderParams(
 					request.companyCode(),
@@ -31,7 +31,7 @@ public class OrderController {
 					request.totalQuantity(),
 					request.price(),
 					request.now(),
-					user.getMember().getId()
+				    (long)1
 			)
 		);
 		return ResponseEntity.ok().build();

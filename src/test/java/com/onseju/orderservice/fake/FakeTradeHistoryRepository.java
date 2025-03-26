@@ -32,6 +32,16 @@ public class FakeTradeHistoryRepository implements TradeHistoryRepository {
         return saved;
     }
 
+    @Override
+    public void deleteAll() {
+
+    }
+
+    @Override
+    public TradeHistory findByBuyOrderIdAndSellOrderId(Long buyOrderId, Long sellOrderId) {
+        return null;
+    }
+
     private boolean hasElement(TradeHistory tradeHistory) {
         if (tradeHistory.getId() == null) {
             return false;

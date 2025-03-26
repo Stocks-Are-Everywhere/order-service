@@ -31,12 +31,7 @@ public class Account extends BaseEntity {
 	@JoinColumn(nullable = false)
 	private Long memberId;
 
-	public void validateDepositBalance(final BigDecimal totalPrice) {
-		final BigDecimal availableBalance = getAvailableBalance();
-		if (availableBalance.compareTo(totalPrice) < 0) {
-			throw new InsufficientBalanceException();
-		}
-	}
+
 
 	private BigDecimal getAvailableBalance() {
 		return this.balance.subtract(this.reservedBalance);

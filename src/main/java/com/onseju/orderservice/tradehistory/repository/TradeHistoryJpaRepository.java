@@ -22,4 +22,5 @@ public interface TradeHistoryJpaRepository extends JpaRepository<TradeHistory, L
 	@Query("SELECT t FROM TradeHistory t WHERE t.companyCode = :companyCode ORDER BY t.tradeTime DESC")
 	List<TradeHistory> findRecentTradesByCompanyCode(@Param("companyCode") String companyCode, Pageable pageable);
 
+	TradeHistory findByBuyOrderIdAndSellOrderId(Long buyOrderId, Long sellOrderId);
 }

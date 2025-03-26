@@ -57,4 +57,9 @@ public class FakeOrderRepository implements OrderRepository {
                 .findAny()
                 .orElseThrow(OrderNotFoundException::new);
     }
+
+    @Override
+    public void deleteAll() {
+
+    }
 }
