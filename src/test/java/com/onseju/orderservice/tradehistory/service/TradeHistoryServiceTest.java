@@ -2,7 +2,7 @@ package com.onseju.orderservice.tradehistory.service;
 
 import com.onseju.orderservice.fake.FakeTradeHistoryRepository;
 import com.onseju.orderservice.tradehistory.domain.TradeHistory;
-import com.onseju.orderservice.tradehistory.dto.TradeHistoryResponse;
+import com.onseju.orderservice.tradehistory.dto.TradeHistoryDto;
 import com.onseju.orderservice.tradehistory.mapper.TradeHistoryMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,9 +16,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class TradeHistoryServiceTest {
 
-	private FakeTradeHistoryRepository tradeHistoryRepository;
-	private TradeHistoryMapper tradeHistoryMapper = new TradeHistoryMapper();
 	private TradeHistoryService tradeHistoryService;
+	private FakeTradeHistoryRepository tradeHistoryRepository;
+	private final TradeHistoryMapper tradeHistoryMapper = new TradeHistoryMapper();
 
 	@BeforeEach
 	void setUp() {
@@ -30,7 +30,7 @@ class TradeHistoryServiceTest {
 	@DisplayName("체결 내역을 저장한다.")
 	void save() {
 	    // given
-		TradeHistoryResponse tradeHistoryResponse = new TradeHistoryResponse(
+		TradeHistoryDto tradeHistoryDto = new TradeHistoryDto(
 				"005930",
 				1L,
 				2L,
@@ -39,14 +39,14 @@ class TradeHistoryServiceTest {
 				LocalDateTime.of(2025, 01, 01, 0, 0).toEpochSecond(ZoneOffset.UTC));
 
 		// when
-		tradeHistoryService.saveTradeHistory(tradeHistoryResponse);
+		tradeHistoryService.save(tradeHistoryDto);
 
 	    // then
 		TradeHistory saved = tradeHistoryRepository.findById(1L);
 		assertThat(saved).isNotNull();
-		assertThat(saved.getCompanyCode()).isEqualTo(tradeHistoryResponse.companyCode());
-		assertThat(saved.getSellOrderId()).isEqualTo(tradeHistoryResponse.sellOrderId());
-		assertThat(saved.getBuyOrderId()).isEqualTo(tradeHistoryResponse.buyOrderId());
-		assertThat(saved.getTradeTime()).isEqualTo(tradeHistoryResponse.tradeTime());
+		assertThat(saved.getCompanyCode()).isEqualTo(tradeHistoryDto.companyCode());
+		assertThat(saved.getSellOrderId()).isEqualTo(tradeHistoryDto.sellOrderId());
+		assertThat(saved.getBuyOrderId()).isEqualTo(tradeHistoryDto.buyOrderId());
+		assertThat(saved.getTradeTime()).isEqualTo(tradeHistoryDto.tradeTime());
 	}
 }

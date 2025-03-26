@@ -14,7 +14,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
@@ -33,14 +33,14 @@ class OrderServiceTest {
 	StubCompanyRepository companyRepository = new StubCompanyRepository();
 	FakeOrderRepository orderRepository = new FakeOrderRepository();
 	OrderMapper orderMapper = new OrderMapper();
-	ApplicationEventPublisher applicationEventPublisher;
+	RabbitTemplate rabbitTemplate;
 	UserServiceClients userServiceClients;
 
 	@BeforeEach
 	void setUp() {
-		applicationEventPublisher = Mockito.mock(ApplicationEventPublisher.class);
+		rabbitTemplate = Mockito.mock(RabbitTemplate.class);
 		userServiceClients = Mockito.mock(UserServiceClients.class);
-		orderService = new OrderService(orderRepository, companyRepository, orderMapper, userServiceClients, applicationEventPublisher);
+		orderService = new OrderService(orderRepository, companyRepository, orderMapper, userServiceClients, rabbitTemplate);
 	}
 
 	@Nested

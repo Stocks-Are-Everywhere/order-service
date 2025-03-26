@@ -15,6 +15,12 @@ spring:
       ddl-auto: create-drop
     show-sql: false
 
+  rabbitmq:
+    port: ${RABBITMQ_PORT}
+    host: ${RABBITMQ_HOST}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+
 jwt:
   secret:
     key: ${JWT_SECRET_KEY}

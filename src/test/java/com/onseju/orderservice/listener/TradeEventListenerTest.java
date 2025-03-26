@@ -1,14 +1,14 @@
 package com.onseju.orderservice.listener;
 
-import com.onseju.orderservice.client.UserServiceClients;
 import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.domain.OrderStatus;
 import com.onseju.orderservice.order.domain.Type;
+import com.onseju.orderservice.order.service.OrderService;
 import com.onseju.orderservice.order.service.repository.OrderRepository;
 import com.onseju.orderservice.tradehistory.service.TradeHistoryRepository;
+import com.onseju.orderservice.tradehistory.service.TradeHistoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,13 +25,15 @@ class MatchedEventListenerIntegrationTest {
     @Autowired
     private MatchedEventListener matchedEventListener;
     @Autowired
+    private TradeHistoryService tradeHistoryService;
+    @Autowired
+    private OrderService orderService;
+    @Autowired
     private TradeHistoryRepository tradeHistoryRepository;
     @Autowired
     private OrderRepository orderRepository;
     @Autowired
     private EventMapper eventMapper;
-    @Mock
-    private UserServiceClients userServiceClients;
 
     private MatchedEvent matchedEvent;
 
@@ -72,6 +74,8 @@ class MatchedEventListenerIntegrationTest {
         matchedEvent = new MatchedEvent(
                 "005930",
                 1L,
+                1L,
+                2L,
                 2L,
                 BigDecimal.valueOf(100),
                 BigDecimal.valueOf(1000),
