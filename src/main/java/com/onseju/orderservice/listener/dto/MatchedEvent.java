@@ -1,4 +1,4 @@
-package com.onseju.orderservice.listener;
+package com.onseju.orderservice.listener.dto;
 
 import java.math.BigDecimal;
 

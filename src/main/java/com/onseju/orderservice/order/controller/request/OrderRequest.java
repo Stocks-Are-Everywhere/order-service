@@ -12,7 +12,8 @@ public record OrderRequest(
 		Type type,
 		BigDecimal totalQuantity,
 		BigDecimal price,
-		LocalDateTime now
+		LocalDateTime now,
+		Long memberId
 ) {
 
 }

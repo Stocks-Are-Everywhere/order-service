@@ -1,6 +1,8 @@
 package com.onseju.orderservice.listener;
 
 import com.onseju.orderservice.holding.service.HoldingsRepository;
+import com.onseju.orderservice.listener.dto.EventMapper;
+import com.onseju.orderservice.listener.dto.MatchedEvent;
 import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.domain.OrderStatus;
 import com.onseju.orderservice.order.domain.Type;

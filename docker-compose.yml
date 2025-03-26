@@ -18,3 +18,34 @@ services:
       LC_ALL: ko_kr.utf-8
     ports:
       - "3306:3306"
+  rabbitMq:
+    container_name: onseju-rabbitmq
+    image: rabbitmq:4.0.7-management
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      RABBITMQ_DEFAULT_VHOST: /
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 30s
+      timeout: 20s
+      retries: 5
+      start_period: 40s
+    networks:
+      - onseju-network
+      
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+      - rabbitmq_logs:/var/log/rabbitmq
+
+volumes:
+  rabbitmq-data:
+  rabbitmq_logs:
+
+networks:
+  onseju-network:
+    driver: bridge

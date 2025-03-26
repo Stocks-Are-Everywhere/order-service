@@ -4,17 +4,18 @@ import com.onseju.orderservice.order.domain.OrderStatus;
 import com.onseju.orderservice.order.domain.Type;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import java.util.UUID;
 
 public record OrderedEvent(
-        Long id,
+		UUID id,
+        Long orderId,
         String companyCode,
         Type type,
         OrderStatus status,
         BigDecimal totalQuantity,
         BigDecimal remainingQuantity,
         BigDecimal price,
-        LocalDateTime createdDateTime,
+		Long timestamp,
         Long accountId
 ) {
 }

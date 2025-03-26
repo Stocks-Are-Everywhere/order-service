@@ -2,6 +2,7 @@ package com.onseju.orderservice.order.service;
 
 import com.onseju.orderservice.fake.FakeHoldingsRepository;
 import com.onseju.orderservice.fake.FakeOrderRepository;
+import com.onseju.orderservice.global.utils.TsidGenerator;
 import com.onseju.orderservice.holding.domain.Holdings;
 import com.onseju.orderservice.holding.exception.HoldingsNotFoundException;
 import com.onseju.orderservice.holding.exception.InsufficientHoldingsException;
@@ -11,6 +12,7 @@ import com.onseju.orderservice.order.exception.OrderPriceQuotationException;
 import com.onseju.orderservice.order.exception.PriceOutOfRangeException;
 import com.onseju.orderservice.order.mapper.OrderMapper;
 import com.onseju.orderservice.order.service.dto.CreateOrderParams;
+import com.onseju.orderservice.producer.OrderEventProducer;
 import com.onseju.orderservice.stub.StubAccountRepository;
 import com.onseju.orderservice.stub.StubCompanyRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +20,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -40,12 +41,25 @@ class OrderServiceTest {
 
 	OrderMapper orderMapper = new OrderMapper();
 
-	ApplicationEventPublisher applicationEventPublisher;
+	OrderEventProducer orderProducer;
+
+	TsidGenerator tsidGenerator;
+
+	// ApplicationEventPublisher applicationEventPublisher;
 
 	@BeforeEach
 	void setUp() {
-		applicationEventPublisher = Mockito.mock(ApplicationEventPublisher.class);
-		orderService = new OrderService(orderRepository, companyRepository, holdingsRepository, accountRepository, orderMapper, applicationEventPublisher);
+		orderProducer = Mockito.mock(OrderEventProducer.class);
+		tsidGenerator = Mockito.mock(TsidGenerator.class);
+		orderService = new OrderService(
+			orderRepository,
+			companyRepository, 
+			holdingsRepository, 
+			accountRepository, 
+			orderMapper, 
+			orderProducer,
+			tsidGenerator
+		);
 	}
 
 	@Nested

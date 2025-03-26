@@ -6,9 +6,6 @@ spring:
     username: sa
     password:
 
-  config:
-    import: classpath:/env.properties
-
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:

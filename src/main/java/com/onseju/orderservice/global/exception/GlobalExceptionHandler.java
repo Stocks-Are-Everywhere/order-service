@@ -35,7 +35,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(new ApiResponse<>(
-                "서버 오류가 발생했습니다",
+                String.format("서버 오류가 발생했습니다. %s", ex.getMessage()),
                 null,
                 HttpStatus.INTERNAL_SERVER_ERROR.value()
             ));

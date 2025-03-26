@@ -2,19 +2,24 @@ package com.onseju.orderservice.order.service;
 
 import com.onseju.orderservice.company.domain.Company;
 import com.onseju.orderservice.company.service.CompanyRepository;
+import com.onseju.orderservice.global.response.ApiResponse;
+import com.onseju.orderservice.global.utils.TsidGenerator;
 import com.onseju.orderservice.holding.domain.Holdings;
 import com.onseju.orderservice.holding.service.HoldingsRepository;
+import com.onseju.orderservice.order.controller.response.OrderResponse;
 import com.onseju.orderservice.order.domain.Account;
-import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.exception.PriceOutOfRangeException;
 import com.onseju.orderservice.order.mapper.OrderMapper;
 import com.onseju.orderservice.order.service.dto.CreateOrderParams;
+import com.onseju.orderservice.order.service.dto.OrderedEvent;
 import com.onseju.orderservice.order.service.repository.AccountRepository;
 import com.onseju.orderservice.order.service.repository.OrderRepository;
-import com.onseju.orderservice.order.service.validator.OrderValidator;
+import com.onseju.orderservice.producer.EventProducer;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,24 +35,38 @@ public class OrderService {
 	private final HoldingsRepository holdingsRepository;
 	private final AccountRepository accountRepository;
 	private final OrderMapper orderMapper;
-	private final ApplicationEventPublisher applicationEventPublisher;
+	private final EventProducer<OrderedEvent> eventProducer;
+	private final TsidGenerator tsidGenerator;
 
 	@Transactional
-	public void placeOrder(final CreateOrderParams params) {
+	public ApiResponse<OrderResponse> placeOrder(final CreateOrderParams params) {
 		// 지정가 주문 가격 견적 유효성 검증
-		final BigDecimal price = params.price();
-		final OrderValidator validator = OrderValidator.getUnitByPrice(price);
-		validator.isValidPrice(price);
+		// final BigDecimal price = params.price();
+		// final OrderValidator validator = OrderValidator.getUnitByPrice(price);
+		// validator.isValidPrice(price);
+		//
+		// // 종가 기준 검증
+		// // TODO: 인터널콜 추가
+		// validateClosingPrice(price, params.companyCode());
+		//
+		// Account account = accountRepository.getByMemberId(params.memberId());
+		// validateAccount(params, account);
+		// validateHoldings(account.getId(), params);
 
-		// 종가 기준 검증
-		validateClosingPrice(price, params.companyCode());
+		Long orderid = tsidGenerator.nextId();
+		OrderedEvent orderedEvent = orderMapper.toOrderCreateEvent(orderid, params, params.memberId());
+		eventProducer.publishEvent(orderedEvent);
 
-		Account account = accountRepository.getByMemberId(params.memberId());
-		validateAccount(params, account);
-		validateHoldings(account.getId(), params);
+		OrderResponse orderResponse = OrderResponse.builder()
+				.id(orderid)
+				.companyCode(params.companyCode())
+				.type(params.type())
+				.build();
 
-		Order savedOrder = orderRepository.save(orderMapper.toEntity(params, account.getId()));
-		applicationEventPublisher.publishEvent(orderMapper.toEvent(savedOrder));
+		return new ApiResponse<>(
+				"주문생성 성공",
+				orderResponse,
+				HttpStatus.OK.value());
 	}
 
 	// 종가 기준 가격 검증
