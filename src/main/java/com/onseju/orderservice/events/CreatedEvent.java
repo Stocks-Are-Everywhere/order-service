@@ -1,17 +1,22 @@
-package com.onseju.orderservice.order.controller.request;
+package com.onseju.orderservice.events;
 
 import java.math.BigDecimal;
 
+import com.onseju.orderservice.order.domain.OrderStatus;
 import com.onseju.orderservice.order.domain.Type;
 
 import lombok.Builder;
 
 @Builder
-public record OrderRequest(
+public record CreatedEvent(
+		Long id,
 		String companyCode,
 		Type type,
+		OrderStatus status,
 		BigDecimal totalQuantity,
+		BigDecimal remainingQuantity,
 		BigDecimal price,
+		Long timestamp,
 		Long accountId
 ) {
 }

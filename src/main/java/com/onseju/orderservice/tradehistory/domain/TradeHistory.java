@@ -1,5 +1,7 @@
 package com.onseju.orderservice.tradehistory.domain;
 
+import java.math.BigDecimal;
+
 import com.onseju.orderservice.global.entity.BaseEntity;
 
 import jakarta.persistence.Column;
@@ -14,8 +16,6 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import lombok.extern.slf4j.Slf4j;
 
-import java.math.BigDecimal;
-
 @Entity
 @Getter
 @SuperBuilder
@@ -26,6 +26,7 @@ public class TradeHistory extends BaseEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "trade_history_id")
 	private Long id;
 
 	@Column(nullable = false)
