@@ -1,40 +1,50 @@
 package com.onseju.orderservice.order.mapper;
 
-import com.onseju.orderservice.order.domain.Order;
-import com.onseju.orderservice.order.domain.OrderStatus;
-import com.onseju.orderservice.order.service.dto.CreateOrderParams;
-import com.onseju.orderservice.order.service.dto.OrderedEvent;
+import java.math.BigDecimal;
+import java.time.Instant;
+
 import org.springframework.stereotype.Component;
 
-import java.time.ZoneOffset;
+import com.onseju.orderservice.events.CreatedEvent;
+import com.onseju.orderservice.order.domain.Order;
+import com.onseju.orderservice.order.domain.OrderStatus;
+import com.onseju.orderservice.order.dto.AfterTradeOrderDto;
+import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
 
 @Component
 public class OrderMapper {
 
-    public Order toEntity(final CreateOrderParams params, final Long accountId) {
-        return Order.builder()
-                .companyCode(params.companyCode())
-                .type(params.type())
-                .totalQuantity(params.totalQuantity())
-                .remainingQuantity(params.totalQuantity())
-                .status(OrderStatus.ACTIVE)
-                .price(params.price())
-                .accountId(accountId)
-                .timestamp(params.now().toEpochSecond(ZoneOffset.UTC))
-                .build();
-    }
+	public Order toEntity(final BeforeTradeOrderDto dto, final Long accountId) {
+		return Order.builder()
+				.companyCode(dto.companyCode())
+				.type(dto.type())
+				.totalQuantity(dto.totalQuantity())
+				.remainingQuantity(dto.totalQuantity())
+				.status(OrderStatus.ACTIVE)
+				.price(dto.price())
+				.accountId(accountId)
+				.timestamp(Instant.now().getEpochSecond())
+				.build();
+	}
 
-    public OrderedEvent toEvent(final Order order) {
-        return new OrderedEvent(
-                order.getId(),
-                order.getCompanyCode(),
-                order.getType(),
-                order.getStatus(),
-                order.getTotalQuantity(),
-                order.getRemainingQuantity(),
-                order.getPrice(),
-                order.getCreatedDateTime(),
-                order.getAccountId()
-        );
-    }
+	public CreatedEvent toEvent(final Order order) {
+		return CreatedEvent.builder()
+				.id(order.getId())
+				.companyCode(order.getCompanyCode())
+				.type(order.getType())
+				.status(order.getStatus())
+				.totalQuantity(order.getTotalQuantity())
+				.remainingQuantity(order.getRemainingQuantity())
+				.price(order.getPrice())
+				.timestamp(order.getTimestamp())
+				.accountId(order.getAccountId())
+				.build();
+	}
+
+	public AfterTradeOrderDto toAfterTradeOrderDto(final Long orderId, final BigDecimal quantity) {
+		return AfterTradeOrderDto.builder()
+				.orderId(orderId)
+				.quantity(quantity)
+				.build();
+	}
 }

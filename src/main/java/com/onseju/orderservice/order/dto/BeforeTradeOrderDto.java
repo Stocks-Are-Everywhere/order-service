@@ -1,4 +1,4 @@
-package com.onseju.orderservice.order.controller.request;
+package com.onseju.orderservice.order.dto;
 
 import java.math.BigDecimal;
 
@@ -7,7 +7,7 @@ import com.onseju.orderservice.order.domain.Type;
 import lombok.Builder;
 
 @Builder
-public record OrderRequest(
+public record BeforeTradeOrderDto(
 		String companyCode,
 		Type type,
 		BigDecimal totalQuantity,
