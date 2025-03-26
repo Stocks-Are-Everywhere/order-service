@@ -4,6 +4,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 
 import com.onseju.orderservice.events.CreatedEvent;
+import com.onseju.orderservice.events.UpdateEvent;
 import com.onseju.orderservice.global.config.RabbitMQConfig;
 
 import lombok.extern.slf4j.Slf4j;
@@ -28,5 +29,13 @@ public class OrderEventPublisher {
 	public void publishOrderCreated(final CreatedEvent event) {
 		rabbitTemplate.convertAndSend(
 				RabbitMQConfig.ONSEJU_EXCHANGE, RabbitMQConfig.ORDER_CREATED_KEY, event);
+	}
+
+	/**
+	 * 매칭 후, 사용자 업데이트 이벤트 발행
+	 */
+	public void publishUserUpdate(final UpdateEvent event) {
+		rabbitTemplate.convertAndSend(
+				RabbitMQConfig.ONSEJU_EXCHANGE, RabbitMQConfig.USER_UPDATE_KEY, event);
 	}
 }
