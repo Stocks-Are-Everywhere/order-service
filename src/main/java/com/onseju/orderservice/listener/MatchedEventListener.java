@@ -3,24 +3,32 @@ package com.onseju.orderservice.listener;
 import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.service.repository.OrderRepository;
 import com.onseju.orderservice.tradehistory.service.TradeHistoryRepository;
+import com.onseju.orderservice.tradehistory.service.TradeHistoryService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class MatchedEventListener {
 
     private final TradeHistoryRepository tradeHistoryRepository;
+    private final TradeHistoryService tradeHistoryService;
     private final OrderRepository orderRepository;
     private final EventMapper eventMapper;
 
     @Async
-    @TransactionalEventListener
+    @RabbitListener(queues = "matched.queue")
+    @Transactional
     public void createTradeHistoryEvent(final MatchedEvent matchedEvent) {
+        log.info("Matched event: {}", matchedEvent);
+
         // 1. 주문 내역 조회
         Order buyOrder = orderRepository.getById(matchedEvent.buyOrderId());
         Order sellOrder = orderRepository.getById(matchedEvent.sellOrderId());

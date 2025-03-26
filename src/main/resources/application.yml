@@ -15,7 +15,7 @@ spring:
     password: ${DB_PASSWORD}
 
   jpa:
-    hibernate.ddl-auto: create
+    hibernate.ddl-auto: update
     show-sql: true
     properties:
       hibernate.criteria.literal_handling_mode: BIND
@@ -26,6 +26,12 @@ spring:
         format_sql: true
 
     database-platform: org.hibernate.dialect.MySQL8Dialect
+
+  rabbitmq:
+    port: ${RABBITMQ_PORT}
+    host: ${RABBITMQ_HOST}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
 
   logging.level:
     org.hibernate.SQL: debug
@@ -46,3 +52,6 @@ webSocket:
 jwt:
   secret:
     key: ${JWT_SECRET_KEY}
+
+user-service:
+  url: ${USER_SERVICE_BASE_URL}

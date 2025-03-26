@@ -12,7 +12,7 @@ import com.onseju.orderservice.order.service.repository.OrderRepository;
 import com.onseju.orderservice.order.service.validator.OrderValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +27,7 @@ public class OrderService {
 	private final CompanyRepository companyRepository;
 	private final OrderMapper orderMapper;
 	private final UserServiceClients userServiceClients;
-	private final ApplicationEventPublisher applicationEventPublisher;
+	private final RabbitTemplate rabbitTemplate;
 
 	@Transactional
 	public void placeOrder(final CreateOrderParams params) {
@@ -43,7 +43,7 @@ public class OrderService {
 		Long accountId = getAccountIdFromUserService(params);
 
 		Order savedOrder = orderRepository.save(orderMapper.toEntity(params, accountId));
-		applicationEventPublisher.publishEvent(orderMapper.toEvent(savedOrder));
+		rabbitTemplate.convertAndSend("ordered.exchange", "ordered.key", orderMapper.toEvent(savedOrder));
 	}
 
 	// 종가 기준 가격 검증

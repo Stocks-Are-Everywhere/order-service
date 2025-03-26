@@ -4,6 +4,7 @@ import com.onseju.orderservice.tradehistory.dto.TradeHistoryResponse;
 import com.onseju.orderservice.tradehistory.mapper.TradeHistoryMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 거래 내역 관리 서비스
@@ -18,6 +19,7 @@ public class TradeHistoryService {
 	/**
 	 * 거래 내역 저장 (일반 사용자)
 	 */
+	@Transactional
 	public void saveTradeHistory(final TradeHistoryResponse tradeHistoryResponse) {
 		// DB 저장
 		tradeHistoryRepository.save(tradeHistoryMapper.toEntity(tradeHistoryResponse));
