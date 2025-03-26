@@ -3,7 +3,6 @@ package com.onseju.orderservice.listener;
 import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.service.repository.OrderRepository;
 import com.onseju.orderservice.tradehistory.service.TradeHistoryRepository;
-import com.onseju.orderservice.tradehistory.service.TradeHistoryService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -19,13 +18,12 @@ import java.math.BigDecimal;
 public class MatchedEventListener {
 
     private final TradeHistoryRepository tradeHistoryRepository;
-    private final TradeHistoryService tradeHistoryService;
     private final OrderRepository orderRepository;
     private final EventMapper eventMapper;
 
     @Async
-    @RabbitListener(queues = "matched.queue")
     @Transactional
+    @RabbitListener(queues = "matched.order.queue")
     public void createTradeHistoryEvent(final MatchedEvent matchedEvent) {
         log.info("Matched event: {}", matchedEvent);
 
