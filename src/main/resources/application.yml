@@ -1,0 +1,6 @@
+grpc:
+  client:
+    order-service:
+      address: static://user-service:9090
+      negotiation-type: PLAINTEXT
+

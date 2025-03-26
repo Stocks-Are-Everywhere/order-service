@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.4.3'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'com.google.protobuf' version '0.9.4'
 }
 
 group = 'com.onseju'
@@ -21,6 +22,12 @@ configurations {
 
 repositories {
     mavenCentral()
+}
+
+//grpc
+ext {
+    grpcVersion = '1.69.0'
+    protobufVersion = '3.25.3'
 }
 
 dependencies {
@@ -45,8 +52,55 @@ dependencies {
     testImplementation 'com.h2database:h2'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    // gRPC
+    implementation "net.devh:grpc-client-spring-boot-starter:3.1.0.RELEASE"
+    implementation "io.grpc:grpc-netty:${grpcVersion}"
+    implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
+    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+    implementation "io.grpc:grpc-stub:${grpcVersion}"
+    implementation "com.google.protobuf:protobuf-java-util:${protobufVersion}"
+    implementation "com.google.protobuf:protobuf-java:${protobufVersion}"
+    compileOnly 'org.apache.tomcat:annotations-api:6.0.53'
+    implementation 'org.webjars:webjars-locator-lite:1.0.1'
 }
 
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs.add('-parameters')
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:${protobufVersion}"
+    }
+
+    clean {
+        delete generatedFilesBaseDir
+    }
+
+    plugins {
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
+        }
+    }
+
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+        }
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'build/generated/source/proto/main/grpc'
+            srcDirs 'build/generated/source/proto/main/java'
+        }
+    }
+}
+
