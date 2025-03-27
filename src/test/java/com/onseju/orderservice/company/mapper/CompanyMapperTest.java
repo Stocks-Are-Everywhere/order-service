@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import com.onseju.orderservice.company.controller.response.CompanySearchResponse;
 import com.onseju.orderservice.company.domain.Company;
-import com.onseju.orderservice.events.mapper.CompanyMapper;
+
 
 @Nested
 @DisplayName("Entity & Dto 변환 테스트")

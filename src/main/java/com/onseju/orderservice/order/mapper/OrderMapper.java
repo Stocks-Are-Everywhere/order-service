@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import com.onseju.orderservice.events.CreatedEvent;
 import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.domain.OrderStatus;
+import com.onseju.orderservice.order.domain.Type;
 import com.onseju.orderservice.order.dto.AfterTradeOrderDto;
 import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
 
@@ -17,7 +18,7 @@ public class OrderMapper {
 	public Order toEntity(final BeforeTradeOrderDto dto, final Long accountId) {
 		return Order.builder()
 				.companyCode(dto.companyCode())
-				.type(dto.type())
+				.type(Type.valueOf(dto.type()))
 				.totalQuantity(dto.totalQuantity())
 				.remainingQuantity(dto.totalQuantity())
 				.status(OrderStatus.ACTIVE)

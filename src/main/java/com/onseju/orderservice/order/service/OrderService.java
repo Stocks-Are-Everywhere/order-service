@@ -72,7 +72,7 @@ public class OrderService {
 
 	// 외부의 user-service와 rest 통신
 	private Long getAccountIdFromUserService(final BeforeTradeOrderDto dto) {
-		OrderValidationResponse clientsResponse = userServiceClient.validateOrderAndGetAccountId(dto).getBody();
+		OrderValidationResponse clientsResponse = userServiceClient.validateOrder(dto);
 		return clientsResponse.accountId();
 	}
 
