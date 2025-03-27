@@ -19,10 +19,8 @@ public class MatchedEventPublisher extends AbstractEventPublisher<MatchedEvent> 
 
     @Override
     protected void validateEvent(MatchedEvent event) {
-        // TODO: MatchedEvent에 event id 값 추가 후 수정
-        // if (event == null || event.id() == null) {
-        if (event == null) {
-            throw new IllegalArgumentException("Invalid order event");
+        if (event == null || event.id() == null) {
+            throw new IllegalArgumentException("Invalid matched order event");
         }
     }
 
@@ -30,9 +28,8 @@ public class MatchedEventPublisher extends AbstractEventPublisher<MatchedEvent> 
     protected void doPublish(MatchedEvent event) {
         try {
             publishUpdateUserEventToUserService(event);
-            // log.info("주문 이벤트 발행 완료. orderId: {}", event.id());
         } catch (Exception ex) {
-            // log.error("주문 이벤트 발행 중 오류 발생. orderId: {}", event.id(), ex);
+            log.error("체결 완료 이벤트 발행 중 오류 발생. event id: {}", event.id(), ex);
             throw new MatchedEventPublisherFailException();
         }
     }
@@ -43,8 +40,7 @@ public class MatchedEventPublisher extends AbstractEventPublisher<MatchedEvent> 
             RabbitMQConfig.ONSEJU_EXCHANGE,
             RabbitMQConfig.USER_UPDATE_KEY,
             event,
-            // "user update -" + event.id()
-            "user update -" + event.buyOrderId()
+            "user update -" + event.id()
         );
     }
 }
