@@ -21,11 +21,11 @@ import com.onseju.orderservice.chart.domain.TimeFrame;
 import com.onseju.orderservice.chart.dto.CandleDto;
 import com.onseju.orderservice.chart.dto.ChartResponseDto;
 import com.onseju.orderservice.chart.dto.ChartUpdateDto;
+import com.onseju.orderservice.company.service.ClosingPriceService;
 import com.onseju.orderservice.tradehistory.domain.TradeHistory;
 import com.onseju.orderservice.tradehistory.service.repository.TradeHistoryRepository;
 
 import io.micrometer.common.util.StringUtils;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,11 +40,11 @@ public class ChartService {
 
 	private final SimpMessagingTemplate messagingTemplate;
 	private final TradeHistoryRepository tradeHistoryRepository;
+	private final ClosingPriceService closingPriceService;
 
 	// 상수 정의
 	private static final Integer MAX_TRADE_HISTORY = 1000; // 종목당 최대 보관 거래 수
 	private static final Integer CANDLE_KEEP_NUMBER = 100; // 캔들 데이터 보관 개수
-	private static final double DEFAULT_PRICE = 100; // 기본 가격
 	private static final String CHART_TOPIC_FORMAT = "/topic/chart/%s";
 	private static final String TIMEFRAME_CHART_TOPIC_FORMAT = "/topic/chart/%s/%s";
 
@@ -58,7 +58,6 @@ public class ChartService {
 	/**
 	 * 서버 시작 시 거래 내역 로드 및 캔들 초기화
 	 */
-	@PostConstruct
 	public void loadTradeHistoryFromDb() {
 		log.info("서버 시작 시 DB에서 거래 내역 로드 중..");
 		try {
@@ -72,7 +71,7 @@ public class ChartService {
 			loadTradeHistoriesAndInitializeLocks(companyCodesWithTradeHistory);
 
 			// 로드된 거래 내역 기반으로 캔들 초기화
-			initializeCandlesFromTrades();
+			// initializeCandlesFromTrades();
 		} catch (Exception e) {
 			log.error("거래 내역 로드 중 오류 발생");
 		}
@@ -150,7 +149,7 @@ public class ChartService {
 	/**
 	 * 로드된 거래 내역 기반으로 캔들 초기화
 	 */
-	private void initializeCandlesFromTrades() {
+	public void initializeCandlesFromTrades() {
 		log.info("로드된 거래 내역을 기반으로 캔들 데이터 초기화 중...");
 
 		for (Map.Entry<String, ConcurrentLinkedQueue<TradeHistory>> entry : recentTradesMap.entrySet()) {
@@ -206,8 +205,8 @@ public class ChartService {
 		final List<CandleDto> candles = new ArrayList<>();
 		companyCodeCandleMap.put(timeFrame, candles);
 
-		generateCandlesFromTrades(candles, trades, timeFrame);
-		fillEmptyCandlesUntilNow(candles, timeFrame);
+		generateCandlesFromTrades(companyCode, candles, trades, timeFrame);
+		fillEmptyCandlesUntilNow(companyCode, candles, timeFrame);
 		limitCandleListSize(companyCodeCandleMap, timeFrame, candles);
 	}
 
@@ -215,6 +214,7 @@ public class ChartService {
 	 * 거래 내역으로부터 캔들 생성
 	 */
 	private void generateCandlesFromTrades(
+			final String companyCode,
 			final List<CandleDto> candles,
 			final List<TradeHistory> trades,
 			final TimeFrame timeFrame
@@ -232,8 +232,8 @@ public class ChartService {
 
 			if (currentCandleTime == null || candleTime > currentCandleTime) {
 				if (currentCandleTime != null) {
-					fillEmptyCandles(candles, currentCandleTime, candleTime, timeFrameSeconds, close);
-					candles.add(createCandleDto(currentCandleTime, open, high, low, close, volume));
+					fillEmptyCandles(companyCode, candles, currentCandleTime, candleTime, timeFrameSeconds, close);
+					candles.add(createCandleDto(companyCode, currentCandleTime, open, high, low, close, volume));
 				}
 
 				// 새 캔들 시작
@@ -251,14 +251,15 @@ public class ChartService {
 
 		// 마지막 캔들 추가
 		if (currentCandleTime != null) {
-			candles.add(createCandleDto(currentCandleTime, open, high, low, close, volume));
+			candles.add(createCandleDto(companyCode, currentCandleTime, open, high, low, close, volume));
 		}
 	}
 
 	/**
 	 * 현재 시간까지 빈 캔들 채우기
 	 */
-	private void fillEmptyCandlesUntilNow(final List<CandleDto> candles, final TimeFrame timeFrame) {
+	private void fillEmptyCandlesUntilNow(final String companyCode, final List<CandleDto> candles,
+			final TimeFrame timeFrame) {
 		if (candles.isEmpty()) {
 			return;
 		}
@@ -268,7 +269,7 @@ public class ChartService {
 		final Long timeFrameSeconds = timeFrame.getSeconds();
 		final Double lastPrice = candles.get(candles.size() - 1).close();
 
-		fillEmptyCandles(candles, lastCandleTime, calculateCandleTime(now, timeFrameSeconds),
+		fillEmptyCandles(companyCode, candles, lastCandleTime, calculateCandleTime(now, timeFrameSeconds),
 				timeFrameSeconds, lastPrice);
 	}
 
@@ -283,6 +284,7 @@ public class ChartService {
 	 * 빈 캔들 채우기
 	 */
 	private void fillEmptyCandles(
+			final String companyCode,
 			final List<CandleDto> candles,
 			final Long fromTime,
 			final Long toTime,
@@ -294,11 +296,21 @@ public class ChartService {
 		}
 
 		// 기본값 설정
-		final Double safePriceValue = !Double.isNaN(lastPrice) ? lastPrice : DEFAULT_PRICE;
+		final Double safePriceValue = !Double.isNaN(lastPrice) ? lastPrice :
+				closingPriceService.getClosingPrice(companyCode).doubleValue();
 
 		// 캔들 채우기
 		for (Long time = fromTime + timeFrameSeconds; time < toTime; time += timeFrameSeconds) {
-			candles.add(createCandleDto(time, safePriceValue, safePriceValue, safePriceValue, safePriceValue, 0));
+			candles.add(
+					createCandleDto(
+							companyCode,
+							time,
+							safePriceValue,
+							safePriceValue,
+							safePriceValue,
+							safePriceValue,
+							0)
+			);
 		}
 	}
 
@@ -306,6 +318,7 @@ public class ChartService {
 	 * CandleDto 생성 (null 값 방지)
 	 */
 	private CandleDto createCandleDto(
+			final String companyCode,
 			Long time,
 			final Double open,
 			final Double high,
@@ -320,10 +333,10 @@ public class ChartService {
 		}
 
 		// 가격 유효성 검증 및 기본값 설정
-		final Double safeOpen = validatePrice(open);
-		Double safeHigh = validatePrice(high);
-		Double safeLow = validatePrice(low);
-		final Double safeClose = validatePrice(close);
+		final Double safeOpen = validatePrice(companyCode, open);
+		Double safeHigh = validatePrice(companyCode, high);
+		Double safeLow = validatePrice(companyCode, low);
+		final Double safeClose = validatePrice(companyCode, close);
 		final Integer safeVolume = (volume != null && volume >= 0) ? volume : 0;
 
 		// 최대/최소값 논리적 검증
@@ -343,8 +356,9 @@ public class ChartService {
 	/**
 	 * 가격 유효성 검증
 	 */
-	private Double validatePrice(final Double price) {
-		return (price != null && !price.isNaN()) ? price : DEFAULT_PRICE;
+	private Double validatePrice(final String companyCode, final Double price) {
+		return (price != null && !price.isNaN()) ? price :
+				closingPriceService.getClosingPrice(companyCode).doubleValue();
 	}
 
 	/**
@@ -451,7 +465,8 @@ public class ChartService {
 			final Long currentCandleTime
 	) {
 		final Double lastPrice = getLastPrice(companyCode);
-		final CandleDto newCandle = createCandleDto(currentCandleTime, lastPrice, lastPrice, lastPrice, lastPrice, 0);
+		final CandleDto newCandle =
+				createCandleDto(companyCode, currentCandleTime, lastPrice, lastPrice, lastPrice, lastPrice, 0);
 		candles.add(newCandle);
 	}
 
@@ -488,11 +503,12 @@ public class ChartService {
 			final Long currentCandleTime
 	) {
 		// 빈 캔들 채우기
-		fillEmptyCandles(candles, lastCandle.time(), currentCandleTime, timeFrame.getSeconds(), lastCandle.close());
+		fillEmptyCandles(
+				companyCode, candles, lastCandle.time(), currentCandleTime, timeFrame.getSeconds(), lastCandle.close());
 
 		// 새 캔들 시간이면 추가
 		if (currentCandleTime > lastCandle.time()) {
-			addNewCandle(candles, currentCandleTime, lastCandle.close());
+			addNewCandle(companyCode, candles, currentCandleTime, lastCandle.close());
 		}
 
 		// 캔들 개수 제한
@@ -502,8 +518,13 @@ public class ChartService {
 	/**
 	 * 새 캔들 생성 및 추가
 	 */
-	private void addNewCandle(final List<CandleDto> candles, final Long candleTime, final Double price) {
-		final CandleDto newCandle = createCandleDto(candleTime, price, price, price, price, 0);
+	private void addNewCandle(
+			final String companyCode,
+			final List<CandleDto> candles,
+			final Long candleTime,
+			final Double price
+	) {
+		final CandleDto newCandle = createCandleDto(companyCode, candleTime, price, price, price, price, 0);
 		candles.add(newCandle);
 	}
 
@@ -528,7 +549,7 @@ public class ChartService {
 	private Double getLastPrice(final String companyCode) {
 		ConcurrentLinkedQueue<TradeHistory> trades = recentTradesMap.get(companyCode);
 		if (trades == null || trades.isEmpty()) {
-			return DEFAULT_PRICE;
+			return closingPriceService.getClosingPrice(companyCode).doubleValue();
 		}
 		return trades.peek().getPrice().doubleValue();
 	}
@@ -616,10 +637,11 @@ public class ChartService {
 		final Integer volume = extractSafeVolume(tradeHistory);
 
 		if (candles.isEmpty()) {
-			handleEmptyCandleList(candles, candleTime, price, volume);
+			handleEmptyCandleList(tradeHistory.getCompanyCode(), candles, candleTime, price, volume);
 		} else {
 			updateExistingCandleList(
-					timeFrame, companyTimeFrameMap, candles, candleTime, price, volume, timeFrameSeconds);
+					tradeHistory.getCompanyCode(), timeFrame, companyTimeFrameMap, candles,
+					candleTime, price, volume, timeFrameSeconds);
 		}
 	}
 
@@ -628,7 +650,8 @@ public class ChartService {
 	 */
 	private Double extractSafePrice(final TradeHistory tradeHistory) {
 		return tradeHistory.getPrice() != null ?
-				tradeHistory.getPrice().doubleValue() : DEFAULT_PRICE;
+				tradeHistory.getPrice().doubleValue() :
+				closingPriceService.getClosingPrice(tradeHistory.getCompanyCode()).doubleValue();
 	}
 
 	/**
@@ -643,12 +666,13 @@ public class ChartService {
 	 * 빈 캔들 리스트에 거래 기반 캔들 추가
 	 */
 	private void handleEmptyCandleList(
+			final String companyCode,
 			final List<CandleDto> candles,
 			final Long candleTime,
 			final Double price,
 			final Integer volume
 	) {
-		final CandleDto newCandle = createCandleDto(candleTime, price, price, price, price, volume);
+		final CandleDto newCandle = createCandleDto(companyCode, candleTime, price, price, price, price, volume);
 		candles.add(newCandle);
 	}
 
@@ -656,6 +680,7 @@ public class ChartService {
 	 * 기존 캔들 리스트 거래 기반 업데이트
 	 */
 	private void updateExistingCandleList(
+			final String companyCode,
 			final TimeFrame timeFrame,
 			final Map<TimeFrame, List<CandleDto>> companyTimeFrameMap,
 			final List<CandleDto> candles,
@@ -669,8 +694,8 @@ public class ChartService {
 		if (lastCandle.time().equals(candleTime)) {
 			updateExistingCandle(candles, lastCandle, price, volume);
 		} else if (candleTime > lastCandle.time()) {
-			handleNewCandleTime(
-					timeFrame, companyTimeFrameMap, candles, lastCandle, candleTime, price, volume, timeFrameSeconds);
+			handleNewCandleTime(companyCode, timeFrame, companyTimeFrameMap, candles, lastCandle,
+					candleTime, price, volume, timeFrameSeconds);
 		}
 	}
 
@@ -699,6 +724,7 @@ public class ChartService {
 	 * 새로운 캔들 시간 처리
 	 */
 	private void handleNewCandleTime(
+			final String companyCode,
 			final TimeFrame timeFrame,
 			final Map<TimeFrame, List<CandleDto>> companyTimeFrameMap,
 			final List<CandleDto> candles,
@@ -710,10 +736,10 @@ public class ChartService {
 	) {
 
 		// 빈 캔들 채우기
-		fillEmptyCandles(candles, lastCandle.time(), candleTime, timeFrameSeconds, lastCandle.close());
+		fillEmptyCandles(companyCode, candles, lastCandle.time(), candleTime, timeFrameSeconds, lastCandle.close());
 
 		// 새 캔들 생성
-		final CandleDto newCandle = createCandleDto(candleTime, price, price, price, price, volume);
+		final CandleDto newCandle = createCandleDto(companyCode, candleTime, price, price, price, price, volume);
 		candles.add(newCandle);
 
 		// 캔들 리스트 크기 제한
@@ -849,10 +875,10 @@ public class ChartService {
 		final List<CandleDto> timeFrameCandles = getTimeFrameCandles(companyCode, timeFrame);
 
 		if (timeFrameCandles.isEmpty()) {
-			return createDefaultCandleList(timeFrame);
+			return createDefaultCandleList(companyCode, timeFrame);
 		}
 
-		return processAndConvertValidCandles(timeFrameCandles);
+		return processAndConvertValidCandles(companyCode, timeFrameCandles);
 	}
 
 	/**
@@ -871,7 +897,7 @@ public class ChartService {
 	/**
 	 * 유효한 캔들 데이터만 필터링, 정렬 후 변환
 	 */
-	private List<CandleDto> processAndConvertValidCandles(final List<CandleDto> candles) {
+	private List<CandleDto> processAndConvertValidCandles(final String companyCode, final List<CandleDto> candles) {
 		// 유효한 캔들만 필터링
 		final List<CandleDto> validCandles = new ArrayList<>(candles.stream()
 				.filter(this::isValidCandle)
@@ -887,6 +913,7 @@ public class ChartService {
 		// 정규화된 캔들 생성 (불변성을 보장하기 위해 새 객체 생성)
 		return validCandles.stream()
 				.map(candle -> createCandleDto(
+						companyCode,
 						candle.time(),
 						candle.open(),
 						candle.high(),
@@ -906,9 +933,9 @@ public class ChartService {
 	/**
 	 * 기본 캔들 목록 생성 (비어있을 경우)
 	 */
-	private List<CandleDto> createDefaultCandleList(final TimeFrame timeFrame) {
+	private List<CandleDto> createDefaultCandleList(final String companyCode, final TimeFrame timeFrame) {
 		final List<CandleDto> defaultList = new ArrayList<>();
-		defaultList.add(createDefaultCandle(timeFrame));
+		defaultList.add(createDefaultCandle(companyCode, timeFrame));
 
 		log.info("타임프레임 {}에 대한 캔들 데이터가 없어 기본 캔들을 생성합니다.",
 				timeFrame.getTimeCode());
@@ -919,17 +946,19 @@ public class ChartService {
 	/**
 	 * 기본 캔들 생성
 	 */
-	private CandleDto createDefaultCandle(final TimeFrame timeFrame) {
+	private CandleDto createDefaultCandle(final String companyCode, final TimeFrame timeFrame) {
 		final Long now = Instant.now().getEpochSecond();
 		final Long timeFrameSeconds = timeFrame.getSeconds();
 		final Long currentCandleTime = calculateCandleTime(now, timeFrameSeconds);
+		final Double price = closingPriceService.getClosingPrice(companyCode).doubleValue();
 
 		return createCandleDto(
+				companyCode,
 				currentCandleTime,
-				DEFAULT_PRICE,
-				DEFAULT_PRICE,
-				DEFAULT_PRICE,
-				DEFAULT_PRICE,
+				price,
+				price,
+				price,
+				price,
 				0);
 	}
 

@@ -14,10 +14,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.onseju.orderservice.chart.service.ChartService;
 import com.onseju.orderservice.company.controller.response.CompanySearchResponse;
 import com.onseju.orderservice.company.domain.Company;
+import com.onseju.orderservice.company.mapper.CompanyMapper;
 import com.onseju.orderservice.company.service.repository.CompanyRepository;
-import com.onseju.orderservice.events.mapper.CompanyMapper;
 
 @ExtendWith(MockitoExtension.class)
 class CompanyServiceTest {
@@ -28,11 +29,17 @@ class CompanyServiceTest {
 	@Mock
 	private CompanyRepository companyRepository;
 
+	@Mock
+	private ChartService chartService;
+
+	@Mock
+	private ClosingPriceService closingPriceService;
+
 	private final CompanyMapper companyMapper = new CompanyMapper();
 
 	@BeforeEach
 	void setUp() {
-		companyService = new CompanyService(companyRepository, companyMapper);
+		companyService = new CompanyService(companyRepository, companyMapper, chartService, closingPriceService);
 	}
 
 	@Test

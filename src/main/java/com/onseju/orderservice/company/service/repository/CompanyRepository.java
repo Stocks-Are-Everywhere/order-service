@@ -13,5 +13,7 @@ public interface CompanyRepository {
 
 	void save(final Company company);
 
+	void saveAll(final List<Company> companies);
+
 	Company findByIsuSrtCd(final String isuSrt);
 }
