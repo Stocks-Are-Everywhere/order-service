@@ -53,9 +53,9 @@ class OrderControllerTest {
 			.build();
 
 		mockMvc.perform(post("/api/order")
-				.contentType(MediaType.APPLICATION_JSON)
-				.content(objectMapper.writeValueAsString(request)))
-			.andExpect(status().isOk());
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(request)))
+				.andExpect(status().isOk());
 		verify(orderService).placeOrder(any(BeforeTradeOrderDto.class));
 	}
 }

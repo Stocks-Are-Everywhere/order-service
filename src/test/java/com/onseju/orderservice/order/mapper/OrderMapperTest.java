@@ -1,7 +1,9 @@
 package com.onseju.orderservice.order.mapper;
 
-import com.onseju.orderservice.company.controller.response.CompanySearchResponse;
-import com.onseju.orderservice.company.domain.Company;
+
+import com.onseju.orderservice.order.domain.Order;
+import com.onseju.orderservice.order.domain.Type;
+import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -19,17 +21,13 @@ class CompanyMapperTest {
 	@Test
 	void toCompanySearchResponse() {
 		// given
-		Company company = Company.builder()
-			.isuCd("005930")
-			.isuSrtCd("005930")
-			.isuNm("삼성전자")
-			.isuAbbrv("KOSPI")
-			.isuEngNm("주권")
-			.kindStkcertTpNm("삼성전자")
-			.closingPrice(new BigDecimal(1000))
-			.build();
+
+		String companyCode = "005930";
+		BeforeTradeOrderDto beforeTradeOrderDto = new BeforeTradeOrderDto("005930", Type.LIMIT_BUY, new BigDecimal(100),
+				new BigDecimal(1000), 1L);
+
 		// when
-		CompanySearchResponse response = mapper.toCompanySearchResponse(company);
+		Order order = orderMapper.toEntity(beforeTradeOrderDto, 1L);
 
 		// then
 		assertThat(response).isNotNull();
