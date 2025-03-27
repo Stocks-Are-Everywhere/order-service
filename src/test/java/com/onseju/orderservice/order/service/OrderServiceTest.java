@@ -139,7 +139,7 @@ class OrderServiceTest {
 	public class communicationWithUserService {
 
 		@Test
-		@DisplayName("")
+		@DisplayName("외부 모듈과 통신을 실패할 경우 예외를 발생시킨다.")
 		void communicationWithUserService() {
 			// given
 			BigDecimal price = new BigDecimal(1300);
