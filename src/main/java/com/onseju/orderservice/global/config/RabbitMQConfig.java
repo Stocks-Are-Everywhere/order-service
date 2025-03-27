@@ -102,10 +102,8 @@ public class RabbitMQConfig {
 			Map<String, Object> args = new HashMap<>();
 			args.put("x-dead-letter-exchange", DLX_EXCHANGE); // 실패 시 메시지가 전달될 DLX
 			args.put("x-dead-letter-routing-key", DLX_KEY);   // DLX 내에서 사용할 라우팅 키
-			args.put("x-message-ttl", MESSAGE_TTL); // 메시지 타임아웃 설정 (10초)
 
-			// Queue queue = QueueBuilder.durable(queueName).withArguments(args).build();
-			Queue queue = QueueBuilder.durable(queueName).build();
+			Queue queue = QueueBuilder.durable(queueName).withArguments(args).build();
 			DirectExchange exchange = new DirectExchange(exchangeName);
 			Binding binding = BindingBuilder.bind(queue).to(exchange).with(routingKey);
 

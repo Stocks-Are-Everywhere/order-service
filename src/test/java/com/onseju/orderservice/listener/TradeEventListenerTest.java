@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -64,7 +65,7 @@ class MatchedEventListenerIntegrationTest {
 				.remainingQuantity(new BigDecimal("100"))
 				.status(OrderStatus.ACTIVE)
 				.price(new BigDecimal("50000"))
-				.timestamp(Instant.now().getEpochSecond())
+				.timestamp(Instant.now().toEpochMilli())
 				.createdDateTime(LocalDateTime.now())
 				.updatedDateTime(LocalDateTime.now())
 				.accountId(1L)
@@ -76,7 +77,7 @@ class MatchedEventListenerIntegrationTest {
 				.remainingQuantity(new BigDecimal("100"))
 				.status(OrderStatus.ACTIVE)
 				.price(new BigDecimal("50000"))
-				.timestamp(Instant.now().getEpochSecond())
+				.timestamp(Instant.now().toEpochMilli())
 				.createdDateTime(LocalDateTime.now())
 				.updatedDateTime(LocalDateTime.now())
 				.accountId(2L)
@@ -87,6 +88,7 @@ class MatchedEventListenerIntegrationTest {
 		orderRepository.save(sellOrder);
 
 		matchedEvent = new MatchedEvent(
+				UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
 				"005930",
 				1L,
                 1L,
@@ -94,7 +96,7 @@ class MatchedEventListenerIntegrationTest {
                 2L,
 				BigDecimal.valueOf(100),
 				BigDecimal.valueOf(1000),
-				Instant.now().getEpochSecond()
+				Instant.now().toEpochMilli()
 		);
 	}
 
