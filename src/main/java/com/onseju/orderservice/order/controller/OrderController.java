@@ -26,7 +26,7 @@ public class OrderController {
 	) {
 		final BeforeTradeOrderDto dto = BeforeTradeOrderDto.builder()
 				.companyCode(request.companyCode())
-				.type(request.type())
+				.type(request.type().name())
 				.totalQuantity(request.totalQuantity())
 				.price(request.price())
 				.memberId(user.getMember().getId())

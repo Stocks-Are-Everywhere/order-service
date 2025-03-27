@@ -46,11 +46,11 @@ class OrderControllerTest {
 	@WithMockUserDetails
 	void testReceived() throws Exception {
 		OrderRequest request = OrderRequest.builder()
-				.companyCode("AAPL")
-				.type(Type.LIMIT_BUY)
-				.totalQuantity(new BigDecimal("10"))
-				.price(new BigDecimal("150.00"))
-				.build();
+			.companyCode("AAPL")
+			.type(Type.LIMIT_BUY)
+			.totalQuantity(new BigDecimal("10"))
+			.price(new BigDecimal("150.00"))
+			.build();
 
 		mockMvc.perform(post("/api/order")
 						.contentType(MediaType.APPLICATION_JSON)

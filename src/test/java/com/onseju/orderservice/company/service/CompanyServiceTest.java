@@ -40,16 +40,16 @@ class CompanyServiceTest {
 		// given
 		String keyword = "삼";
 		Company company = Company.builder()
-				.isuCd("005930")
-				.isuSrtCd("005930")
-				.isuNm("삼성전자")
-				.isuAbbrv("KOSPI")
-				.isuEngNm("주권")
-				.kindStkcertTpNm("삼성전자")
-				.closingPrice(new BigDecimal(1000))
-				.build();
+			.isuCd("005930")
+			.isuSrtCd("005930")
+			.isuNm("삼성전자")
+			.isuAbbrv("KOSPI")
+			.isuEngNm("주권")
+			.kindStkcertTpNm("삼성전자")
+			.closingPrice(new BigDecimal(1000))
+			.build();
 		when(companyRepository.findByIsuNmContainingOrIsuAbbrvContainingOrIsuEngNmContainingOrIsuSrtCdContaining(
-				"삼")).thenReturn(List.of(company));
+			"삼")).thenReturn(List.of(company));
 
 		// when
 		List<CompanySearchResponse> response = companyService.searchCompanies(keyword);

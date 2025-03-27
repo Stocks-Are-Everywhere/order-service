@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 @Builder
 public record BeforeTradeOrderDto(
 		String companyCode,
-		Type type,
+		String type,
 		BigDecimal totalQuantity,
 		BigDecimal price,
 		Long memberId
