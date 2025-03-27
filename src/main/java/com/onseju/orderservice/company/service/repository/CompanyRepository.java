@@ -11,6 +11,8 @@ public interface CompanyRepository {
 
 	List<Company> findAll();
 
+	List<String> findAllIsuSrtCd();
+
 	void save(final Company company);
 
 	void saveAll(final List<Company> companies);

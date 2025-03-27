@@ -56,22 +56,27 @@ public class ChartService {
 	private final Map<String, ReentrantReadWriteLock> companyLocks = new ConcurrentHashMap<>();
 
 	/**
-	 * 서버 시작 시 거래 내역 로드 및 캔들 초기화
+	 * 서버 시작 시 거래 내역 로드 및 모든 종목의 캔들 초기화
 	 */
-	public void loadTradeHistoryFromDb() {
+	public void initializeAllCompanyCandleData() {
 		log.info("서버 시작 시 DB에서 거래 내역 로드 중..");
 		try {
-			// 활성화된 모든 회사 코드 목록 조회 (거래 내역이 있는 종목 코드로 가정)
-			final List<String> companyCodesWithTradeHistory = fetchActiveCompanyCodes();
-			if (companyCodesWithTradeHistory.isEmpty()) {
-				log.info("활성화된 종목 코드가 없습니다. 거래 내역 로드를 건너뜁니다.");
+			final List<String> allCompanyCodes = fetchAllCompanyCodes();
+
+			if (allCompanyCodes.isEmpty()) {
+				log.info("종목 코드가 없습니다. 초기화를 건너뜁니다.");
 				return;
 			}
 
-			loadTradeHistoriesAndInitializeLocks(companyCodesWithTradeHistory);
+			// 모든 종목에 대해 락 초기화
+			allCompanyCodes.forEach(this::initializeLockForCompany);
 
-			// 로드된 거래 내역 기반으로 캔들 초기화
-			// initializeCandlesFromTrades();
+			// 거래 내역이 있는 종목에 대해 거래 내역 로드
+			final List<String> companyCodesWithTradeHistory = fetchActiveCompanyCodes();
+			if (!companyCodesWithTradeHistory.isEmpty()) {
+				companyCodesWithTradeHistory.forEach(this::loadRecentTradesForCompany);
+			}
+			initializeAllCandlesForCompanies(allCompanyCodes);
 		} catch (Exception e) {
 			log.error("거래 내역 로드 중 오류 발생");
 		}
@@ -87,12 +92,82 @@ public class ChartService {
 	}
 
 	/**
-	 * 각 종목별 거래 내역 로드 및 락 초기화
+	 * 모든 종목 코드 목록 조회
 	 */
-	private void loadTradeHistoriesAndInitializeLocks(final List<String> companyCodes) {
-		for (String companyCode : companyCodes) {
-			loadRecentTradesForCompany(companyCode);
-			initializeLockForCompany(companyCode);
+	public List<String> fetchAllCompanyCodes() {
+		return closingPriceService.getAllCompanyCode();
+	}
+
+	/**
+	 * 모든 종목에 대해 캔들 초기화
+	 */
+	private void initializeAllCandlesForCompanies(final List<String> allCompanyCodes) {
+		log.info("모든 종목에 대한 캔들 초기화 시작");
+		allCompanyCodes.forEach(companyCode -> {
+			try {
+				// 종목별 락 획득
+				final ReentrantReadWriteLock lock = companyLocks.get(companyCode);
+				if (lock == null) {
+					log.warn("종목 {}에 대한 락이 없습니다. 초기화를 건너뜁니다.", companyCode);
+					return;
+				}
+
+				lock.writeLock().lock();
+				try {
+					final ConcurrentLinkedQueue<TradeHistory> trades = recentTradesMap.get(companyCode);
+					if (trades != null && !trades.isEmpty()) {
+						// 거래 내역이 있는 종목은 거래 내역 기반으로 캔들 초기화
+						final List<TradeHistory> sortedTrades = prepareTradesForCandleGeneration(trades);
+						initializeAllTimeFrameCandles(companyCode, sortedTrades);
+					} else {
+						// 거래 내역이 없는 종목은 기본 캔들 초기화
+						initializeDefaultCandlesForCompany(companyCode);
+					}
+				} finally {
+					lock.writeLock().unlock();
+				}
+			} catch (Exception e) {
+				log.error("종목 {} 캔들 초기화 중 오류 발생: {}", companyCode, e.getMessage(), e);
+			}
+		});
+	}
+
+	/**
+	 * 거래 내역이 없는 종목에 대한 기본 캔들 초기화
+	 */
+	private void initializeDefaultCandlesForCompany(final String companyCode) {
+		// 종목별 타임 프레임 맵 가져오기
+		Map<TimeFrame, List<CandleDto>> companyTimeFrameMap = timeFrameCandleMap.computeIfAbsent(
+				companyCode, k -> new EnumMap<>(TimeFrame.class));
+
+		// 현재 시간
+		final Long now = Instant.now().getEpochSecond();
+
+		// 종목의 종가 가져오기
+		final Double closingPrice = closingPriceService.getClosingPrice(companyCode).doubleValue();
+
+		// 각 타임프레임별로 기본 캔들 생성
+		for (TimeFrame timeFrame : TimeFrame.values()) {
+			List<CandleDto> candles = new ArrayList<>();
+
+			// 현재 시간에 맞는 캔들 시간 계산
+			final Long currentCandleTime = calculateCandleTime(now, timeFrame.getSeconds());
+
+			// 기본 캔들 (현재)
+			final CandleDto currentCandle = createCandleDto(
+					companyCode,
+					currentCandleTime,
+					closingPrice,
+					closingPrice,
+					closingPrice,
+					closingPrice,
+					0);
+
+			// 현재 캔들 추가
+			candles.add(currentCandle);
+
+			// 맵에 저장
+			companyTimeFrameMap.put(timeFrame, candles);
 		}
 	}
 
@@ -144,26 +219,6 @@ public class ChartService {
 	private void storeTradesInMemory(final String companyCode, final List<TradeHistory> trades) {
 		final ConcurrentLinkedQueue<TradeHistory> tradeQueue = new ConcurrentLinkedQueue<>(trades);
 		recentTradesMap.put(companyCode, tradeQueue);
-	}
-
-	/**
-	 * 로드된 거래 내역 기반으로 캔들 초기화
-	 */
-	public void initializeCandlesFromTrades() {
-		log.info("로드된 거래 내역을 기반으로 캔들 데이터 초기화 중...");
-
-		for (Map.Entry<String, ConcurrentLinkedQueue<TradeHistory>> entry : recentTradesMap.entrySet()) {
-			final String companyCode = entry.getKey();
-			final Queue<TradeHistory> trades = entry.getValue();
-
-			if (trades == null || trades.isEmpty()) {
-				log.debug("종목 {}의 거래 내역이 없어 캔들 초기화를 건너뜁니다.", companyCode);
-				continue;
-			}
-
-			final List<TradeHistory> sortedTrades = prepareTradesForCandleGeneration(trades);
-			initializeAllTimeFrameCandles(companyCode, sortedTrades);
-		}
 	}
 
 	/**

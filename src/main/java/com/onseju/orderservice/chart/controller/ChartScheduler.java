@@ -7,6 +7,7 @@ import org.springframework.stereotype.Controller;
 import com.onseju.orderservice.chart.domain.TimeFrame;
 import com.onseju.orderservice.chart.dto.ChartResponseDto;
 import com.onseju.orderservice.chart.service.ChartService;
+import com.onseju.orderservice.events.listener.ApplicationReadyEventListener;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,9 @@ public class ChartScheduler {
 	// 기본 종목 코드
 	private static final String DEFAULT_COMPANY_CODE = "005930";
 	private static final String TOPIC_TEMPLATE = "/topic/candle/%s/%s";
+
+	// 서버 초기화 상태 검증 리스너
+	private final ApplicationReadyEventListener applicationReadyEventListener;
 
 	/**
 	 * 15초봉 업데이트 (15초마다)
@@ -77,6 +81,11 @@ public class ChartScheduler {
 	 * 지정된 종목 코드와 타임프레임에 대한 캔들 업데이트 수행 및 전송
 	 */
 	private void sendCandleUpdates(final String companyCode, final TimeFrame timeFrame) {
+		if (!applicationReadyEventListener.isInitialized()) {
+			log.warn("애플리케이션이 아직 초기화되지 않았습니다. 차트 스케줄러를 건너뜁니다.");
+			return;
+		}
+
 		// 캔들 데이터 업데이트
 		chartService.updateCandles(companyCode);
 
