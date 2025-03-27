@@ -2,10 +2,11 @@ package com.onseju.orderservice.order.mapper;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
-import com.onseju.orderservice.events.CreatedEvent;
+import com.onseju.orderservice.events.OrderCreatedEvent;
 import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.domain.OrderStatus;
 import com.onseju.orderservice.order.dto.AfterTradeOrderDto;
@@ -13,7 +14,6 @@ import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
 
 @Component
 public class OrderMapper {
-
 	public Order toEntity(final BeforeTradeOrderDto dto, final Long accountId) {
 		return Order.builder()
 				.companyCode(dto.companyCode())
@@ -27,8 +27,8 @@ public class OrderMapper {
 				.build();
 	}
 
-	public CreatedEvent toEvent(final Order order) {
-		return CreatedEvent.builder()
+	public OrderCreatedEvent toEvent(final Order order) {
+		return OrderCreatedEvent.builder()
 				.id(order.getId())
 				.companyCode(order.getCompanyCode())
 				.type(order.getType())
