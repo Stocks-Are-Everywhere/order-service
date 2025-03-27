@@ -16,10 +16,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.http.HttpStatus;
 
 import java.math.BigDecimal;
 
@@ -53,9 +52,9 @@ class OrderServiceTest {
 		@Test
 		@DisplayName("TC20.2.1 주문 생성 테스트")
 		void testPlaceOrder() {
-			BeforeTradeOrderDto params = createBeforeTradeOrderDto(Type.LIMIT_BUY, new BigDecimal(1), new BigDecimal(1000), 1L);
-			when(userServiceClient.validateOrderAndGetAccountId(any()))
-					.thenReturn(new ResponseEntity<>(new OrderValidationResponse(1L), HttpStatus.OK));
+			BeforeTradeOrderDto params = createBeforeTradeOrderDto("LIMIT_BUY", new BigDecimal(1), new BigDecimal(1000), 1L);
+			when(userServiceClient.validateOrder(any()))
+				.thenReturn(new OrderValidationResponse(1L, true));
 
 			assertThatNoException().isThrownBy(() -> orderService.placeOrder(params));
 		}
@@ -70,9 +69,9 @@ class OrderServiceTest {
 		void placeOrderWhenPriceWithinUpperLimit() {
 			// given
 			BigDecimal price = new BigDecimal(1300);
-			BeforeTradeOrderDto params = createBeforeTradeOrderDto(Type.LIMIT_BUY, new BigDecimal(1), price, 1L);
-			when(userServiceClient.validateOrderAndGetAccountId(any()))
-					.thenReturn(new ResponseEntity<>(new OrderValidationResponse(1L), HttpStatus.OK));
+			BeforeTradeOrderDto params = createBeforeTradeOrderDto("LIMIT_BUY", new BigDecimal(1), price, 1L);
+			when(userServiceClient.validateOrder(any()))
+				.thenReturn(new OrderValidationResponse(1L, true));
 
 			// when, then
 			assertThatNoException().isThrownBy(() -> orderService.placeOrder(params));
@@ -83,7 +82,7 @@ class OrderServiceTest {
 		void throwExceptionWhenPriceExceedsUpperLimit() {
 			// given
 			BigDecimal price = new BigDecimal(1301);
-			BeforeTradeOrderDto params = createBeforeTradeOrderDto(Type.LIMIT_SELL, new BigDecimal(10), price, 1L);
+			BeforeTradeOrderDto params = createBeforeTradeOrderDto("LIMIT_SELL", new BigDecimal(10), price, 1L);
 
 			// when, then
 			assertThatThrownBy(() -> orderService.placeOrder(params)).isInstanceOf(PriceOutOfRangeException.class);
@@ -94,9 +93,9 @@ class OrderServiceTest {
 		void placeOrderWhenPriceWithinLowerLimit() {
 			// given
 			BigDecimal price = new BigDecimal(700);
-			BeforeTradeOrderDto params = createBeforeTradeOrderDto(Type.LIMIT_BUY, new BigDecimal(10), price, 1L);
-			when(userServiceClient.validateOrderAndGetAccountId(any()))
-					.thenReturn(new ResponseEntity<>(new OrderValidationResponse(1L), HttpStatus.OK));
+			BeforeTradeOrderDto params = createBeforeTradeOrderDto("LIMIT_BUY", new BigDecimal(10), price, 1L);
+			when(userServiceClient.validateOrder(any()))
+				.thenReturn(new OrderValidationResponse(1L, true));
 
 			// when, then
 			assertThatNoException().isThrownBy(() -> orderService.placeOrder(params));
@@ -107,11 +106,11 @@ class OrderServiceTest {
 		void throwExceptionWhenPriceIsBelowLowerLimit() {
 			// given
 			BigDecimal price = new BigDecimal(699);
-			BeforeTradeOrderDto params = createBeforeTradeOrderDto(Type.LIMIT_BUY, new BigDecimal(10), price, 1L);
+			BeforeTradeOrderDto params = createBeforeTradeOrderDto("LIMIT_BUY", new BigDecimal(10), price, 1L);
 
 			// when, then
 			assertThatThrownBy(() -> orderService.placeOrder(params))
-					.isInstanceOf(PriceOutOfRangeException.class);
+				.isInstanceOf(PriceOutOfRangeException.class);
 		}
 
 		@Test
@@ -119,7 +118,7 @@ class OrderServiceTest {
 		void throwExceptionWhenInvalidPrice() {
 			// given
 			BigDecimal price = new BigDecimal(-1);
-			BeforeTradeOrderDto params = createBeforeTradeOrderDto(Type.LIMIT_BUY, new BigDecimal(10), price, 1L);
+			BeforeTradeOrderDto params = createBeforeTradeOrderDto("LIMIT_BUY", new BigDecimal(10), price, 1L);
 
 			// when, then
 			assertThatThrownBy(() -> orderService.placeOrder(params)).isInstanceOf(OrderPriceQuotationException.class);
@@ -130,7 +129,7 @@ class OrderServiceTest {
 		void throwExceptionWhenInvalidUnitPrice() {
 			// given
 			BigDecimal price = new BigDecimal("0.5");
-			BeforeTradeOrderDto params = createBeforeTradeOrderDto(Type.LIMIT_BUY, new BigDecimal(10), price, 1L);
+			BeforeTradeOrderDto params = createBeforeTradeOrderDto("LIMIT_BUY", new BigDecimal(10), price, 1L);
 
 			// when, then
 			assertThatThrownBy(() -> orderService.placeOrder(params)).isInstanceOf(OrderPriceQuotationException.class);
@@ -146,28 +145,28 @@ class OrderServiceTest {
 		void communicationWithUserService() {
 			// given
 			BigDecimal price = new BigDecimal(1300);
-			BeforeTradeOrderDto params = createBeforeTradeOrderDto(Type.LIMIT_BUY, new BigDecimal(1), price, 1L);
-			when(userServiceClient.validateOrderAndGetAccountId(any()))
-					.thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
+			BeforeTradeOrderDto params = createBeforeTradeOrderDto("LIMIT_BUY", new BigDecimal(1), price, 1L);
+			when(userServiceClient.validateOrder(any()))
+				.thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
 
 			// when, then
 			assertThatThrownBy(() -> orderService.placeOrder(params))
-					.isInstanceOf(HttpClientErrorException.class);
+				.isInstanceOf(HttpClientErrorException.class);
 		}
 	}
 
 	private BeforeTradeOrderDto createBeforeTradeOrderDto(
-			Type type,
-			BigDecimal totalQuantity,
-			BigDecimal price,
-			Long memberId
+		String type,
+		BigDecimal totalQuantity,
+		BigDecimal price,
+		Long memberId
 	) {
 		return new BeforeTradeOrderDto(
-				"005930",
-				type,
-				totalQuantity,
-				price,
-				memberId
+			"005930",
+			type,
+			totalQuantity,
+			price,
+			memberId
 		);
 	}
 }
