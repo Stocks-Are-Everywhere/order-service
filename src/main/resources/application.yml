@@ -70,3 +70,9 @@ google:
 
 user-service:
   url: ${USER_SERVICE_BASE_URL}
+  
+grpc:
+  client:
+    order-service:
+      address: static://user-service:9090
+      negotiation-type: PLAINTEXT
