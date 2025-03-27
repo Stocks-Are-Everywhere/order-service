@@ -12,6 +12,7 @@ import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.dto.AfterTradeOrderDto;
 import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
 import com.onseju.orderservice.order.dto.OrderValidationResponse;
+import com.onseju.orderservice.order.exception.OrderNotValidateException;
 import com.onseju.orderservice.order.exception.PriceOutOfRangeException;
 import com.onseju.orderservice.order.mapper.OrderMapper;
 import com.onseju.orderservice.order.service.repository.OrderRepository;
@@ -73,8 +74,15 @@ public class OrderService {
 	// 외부의 user-service와 rest 통신
 	private Long getAccountIdFromUserService(final BeforeTradeOrderDto dto) {
 		OrderValidationResponse clientsResponse = userServiceClient.validateOrder(dto);
+
+		// 검증 결과 확인
+		if (!clientsResponse.result()) {
+			throw new OrderNotValidateException();
+		}
+
 		return clientsResponse.accountId();
 	}
+
 
 	/**
 	 * 주문 예약 수량 업데이트
