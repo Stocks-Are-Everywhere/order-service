@@ -58,11 +58,11 @@ public class RabbitMQConfig {
 	// Queue, Exchange 연결 설정
     private static final Map<String, String> QUEUE_CONFIG = Map.ofEntries(
 		Map.entry(ORDER_CREATED_QUEUE, ONSEJU_EXCHANGE + ":" + ORDER_CREATED_KEY),
-        Map.entry(ORDER_BOOK_SYNCED_QUEUE, ONSEJU_EXCHANGE + ":" + ORDER_BOOK_SYNCED_KEY),
+        Map.entry(ORDER_BOOK_SYNCED_QUEUE, ONSEJU_MATCHING_EXCHANGE + ":" + ORDER_BOOK_SYNCED_KEY),
         Map.entry(MATCHING_REQUEST_QUEUE, ONSEJU_MATCHING_EXCHANGE + ":" + MATCHING_REQUEST_KEY),
         Map.entry(MATCHING_RESULT_QUEUE, ONSEJU_MATCHING_EXCHANGE + ":" + MATCHING_RESULT_KEY),
         Map.entry(USER_UPDATE_QUEUE, ONSEJU_EXCHANGE + ":" + USER_UPDATE_KEY),
-        Map.entry(DLX_QUEUE, ONSEJU_EXCHANGE + ":" + DLX_KEY)
+        Map.entry(DLX_QUEUE, DLX_EXCHANGE + ":" + DLX_KEY)
     );
 
 	private static final long MESSAGE_TTL = 10000; // 10초
