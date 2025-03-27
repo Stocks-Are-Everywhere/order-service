@@ -1,10 +1,9 @@
 package com.onseju.orderservice.order.dto;
 
-import java.math.BigDecimal;
-
 import com.onseju.orderservice.order.domain.Type;
-
 import lombok.Builder;
+
+import java.math.BigDecimal;
 
 @Builder
 public record BeforeTradeOrderDto(
@@ -12,6 +11,6 @@ public record BeforeTradeOrderDto(
 		Type type,
 		BigDecimal totalQuantity,
 		BigDecimal price,
-		Long accountId
+		Long memberId
 ) {
 }

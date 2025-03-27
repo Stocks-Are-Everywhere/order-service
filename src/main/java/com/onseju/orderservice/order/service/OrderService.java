@@ -1,11 +1,5 @@
 package com.onseju.orderservice.order.service;
 
-import java.math.BigDecimal;
-
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.onseju.orderservice.company.domain.Company;
 import com.onseju.orderservice.company.service.repository.CompanyRepository;
 import com.onseju.orderservice.events.CreatedEvent;
@@ -17,13 +11,18 @@ import com.onseju.orderservice.order.client.UserServiceClient;
 import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.dto.AfterTradeOrderDto;
 import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
+import com.onseju.orderservice.order.dto.OrderValidationResponse;
 import com.onseju.orderservice.order.exception.PriceOutOfRangeException;
 import com.onseju.orderservice.order.mapper.OrderMapper;
 import com.onseju.orderservice.order.service.repository.OrderRepository;
 import com.onseju.orderservice.order.service.validator.OrderValidator;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -43,26 +42,16 @@ public class OrderService {
 		// 주문 유효성 검증
 		validateOrder(dto.price(), dto.companyCode());
 
-		// 사용자 유효성 검증
-		userServiceClient.validateAccountAndHoldings(dto);
+		// 계좌 및 보유 주식 검증(REST 요청)
+		Long accountId = getAccountIdFromUserService(dto);
 
 		// 주문 저장
-		final Order order = orderMapper.toEntity(dto, dto.accountId());
+		final Order order = orderMapper.toEntity(dto, accountId);
 		final Order savedOrder = orderRepository.save(order);
 
 		// 주문 생성 이벤트 발행
 		final CreatedEvent event = orderMapper.toEvent(savedOrder);
 		eventPublisher.publishOrderCreated(event);
-	}
-
-	/**
-	 * 주문 예약 수량 업데이트
-	 */
-	@Transactional
-	public void updateRemainingQuantity(final AfterTradeOrderDto dto) {
-		final Order order = orderRepository.getById(dto.orderId());
-		order.decreaseRemainingQuantity(dto.quantity());
-		orderRepository.save(order);
 	}
 
 	/**
@@ -79,6 +68,22 @@ public class OrderService {
 		if (!company.isWithinClosingPriceRange(price)) {
 			throw new PriceOutOfRangeException();
 		}
+	}
+
+	// 외부의 user-service와 rest 통신
+	private Long getAccountIdFromUserService(final BeforeTradeOrderDto dto) {
+		OrderValidationResponse clientsResponse = userServiceClient.validateOrderAndGetAccountId(dto).getBody();
+		return clientsResponse.accountId();
+	}
+
+	/**
+	 * 주문 예약 수량 업데이트
+	 */
+	@Transactional
+	public void updateRemainingQuantity(final AfterTradeOrderDto dto) {
+		final Order order = orderRepository.getById(dto.orderId());
+		order.decreaseRemainingQuantity(dto.quantity());
+		orderRepository.save(order);
 	}
 
 	/**
