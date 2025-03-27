@@ -3,7 +3,9 @@ package com.onseju.orderservice.order.service;
 import com.onseju.orderservice.company.domain.Company;
 import com.onseju.orderservice.company.service.repository.CompanyRepository;
 import com.onseju.orderservice.events.CreatedEvent;
+import com.onseju.orderservice.events.MatchedEvent;
 import com.onseju.orderservice.events.OrderBookSyncedEvent;
+import com.onseju.orderservice.events.UpdateEvent;
 import com.onseju.orderservice.events.publisher.OrderEventPublisher;
 import com.onseju.orderservice.order.client.UserServiceClient;
 import com.onseju.orderservice.order.domain.Order;
@@ -89,5 +91,23 @@ public class OrderService {
 	 */
 	public void broadcastOrderBookUpdate(final OrderBookSyncedEvent event) {
 		messagingTemplate.convertAndSend("/topic/orderbook/" + event.companyCode(), event);
+	}
+
+	/**
+	 * 매칭 후, 사용자 업데이트 이벤트 발행
+	 */
+	public void publishUserUpdateEvent(final MatchedEvent event) {
+		final UpdateEvent updateEvent = UpdateEvent.builder()
+				.companyCode(event.companyCode())
+				.buyOrderId(event.buyOrderId())
+				.buyAccountId(event.buyAccountId())
+				.sellOrderId(event.sellOrderId())
+				.sellAccountId(event.sellAccountId())
+				.quantity(event.quantity())
+				.price(event.price())
+				.tradeAt(event.tradeAt())
+				.build();
+
+		eventPublisher.publishUserUpdate(updateEvent);
 	}
 }
