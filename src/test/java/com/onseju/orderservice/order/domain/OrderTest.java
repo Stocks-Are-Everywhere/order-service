@@ -1,6 +1,5 @@
 package com.onseju.orderservice.order.domain;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -11,13 +10,6 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 class OrderTest {
-
-	private Account account;
-
-	@BeforeEach
-	void setUp() {
-		account = new Account(1L , new BigDecimal("100000000"), new BigDecimal(0), 1L);
-	}
 
 	@Test
 	@DisplayName("주문 생성 및 조회 테스트")
@@ -33,7 +25,7 @@ class OrderTest {
 				.timestamp(now)
 				.createdDateTime(LocalDateTime.now())
 				.updatedDateTime(LocalDateTime.now())
-				.accountId(account.getId())
+				.accountId(1L)
 				.build();
 
 		assertThat(order).isNotNull();
@@ -60,7 +52,7 @@ class OrderTest {
 	@Test
 	@DisplayName("주문의 남은 수량이 0이 될 경우 Order Status를 Complete로 수정한다.")
 	void changeStatusComplete() {
-	    // given
+		// given
 		BigDecimal quantity = BigDecimal.valueOf(100);
 		Order order = Order.builder()
 				.type(Type.LIMIT_BUY)
@@ -69,11 +61,10 @@ class OrderTest {
 				.status(OrderStatus.ACTIVE)
 				.build();
 
-	    // when
+		// when
 		order.decreaseRemainingQuantity(quantity);
 
-	    // then
+		// then
 		assertThat(order.getStatus()).isEqualTo(OrderStatus.COMPLETE);
 	}
 }
-

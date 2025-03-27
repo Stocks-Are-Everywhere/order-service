@@ -1,53 +1,47 @@
 package com.onseju.orderservice.order.service;
 
-import static org.assertj.core.api.Assertions.*;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
+import com.onseju.orderservice.events.publisher.OrderEventPublisher;
+import com.onseju.orderservice.fake.FakeOrderRepository;
+import com.onseju.orderservice.order.client.UserServiceClient;
+import com.onseju.orderservice.order.domain.Type;
+import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
+import com.onseju.orderservice.order.dto.OrderValidationResponse;
+import com.onseju.orderservice.order.exception.OrderPriceQuotationException;
+import com.onseju.orderservice.order.exception.PriceOutOfRangeException;
+import com.onseju.orderservice.order.mapper.OrderMapper;
+import com.onseju.orderservice.stub.StubCompanyRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.web.client.HttpClientErrorException;
 
-import com.onseju.orderservice.events.mapper.OrderMapper;
-import com.onseju.orderservice.fake.FakeHoldingsRepository;
-import com.onseju.orderservice.fake.FakeOrderRepository;
-import com.onseju.orderservice.holding.domain.Holdings;
-import com.onseju.orderservice.holding.exception.HoldingsNotFoundException;
-import com.onseju.orderservice.holding.exception.InsufficientHoldingsException;
-import com.onseju.orderservice.order.controller.request.OrderRequest;
-import com.onseju.orderservice.order.domain.Type;
-import com.onseju.orderservice.order.dto.CreateOrderDto;
-import com.onseju.orderservice.order.exception.OrderPriceQuotationException;
-import com.onseju.orderservice.order.exception.PriceOutOfRangeException;
-import com.onseju.orderservice.stub.StubAccountRepository;
-import com.onseju.orderservice.stub.StubCompanyRepository;
+import java.math.BigDecimal;
+
+import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
 class OrderServiceTest {
 
 	OrderService orderService;
-
-	StubAccountRepository accountRepository = new StubAccountRepository();
-	;
-
 	StubCompanyRepository companyRepository = new StubCompanyRepository();
-
-	FakeHoldingsRepository holdingsRepository = new FakeHoldingsRepository();
-
 	FakeOrderRepository orderRepository = new FakeOrderRepository();
-
 	OrderMapper orderMapper = new OrderMapper();
-
-	ApplicationEventPublisher applicationEventPublisher;
+	OrderEventPublisher eventPublisher;
+	UserServiceClient userServiceClient;
 
 	@BeforeEach
 	void setUp() {
-		applicationEventPublisher = Mockito.mock(ApplicationEventPublisher.class);
-		orderService = new OrderService(orderRepository, companyRepository, holdingsRepository, accountRepository,
-				orderMapper, applicationEventPublisher);
+		eventPublisher = Mockito.mock(OrderEventPublisher.class);
+		userServiceClient = Mockito.mock(UserServiceClient.class);
+		SimpMessagingTemplate messagingTemplate = Mockito.mock(SimpMessagingTemplate.class);
+		orderService = new OrderService(orderRepository, companyRepository, eventPublisher, userServiceClient, orderMapper, messagingTemplate);
 	}
 
 	@Nested
@@ -56,8 +50,9 @@ class OrderServiceTest {
 		@Test
 		@DisplayName("TC20.2.1 주문 생성 테스트")
 		void testPlaceOrder() {
-			CreateOrderDto params = createCreateOrderParams(Type.LIMIT_BUY, new BigDecimal(1), new BigDecimal(1000),
-					1L);
+			BeforeTradeOrderDto params = createBeforeTradeOrderDto(Type.LIMIT_BUY, new BigDecimal(1), new BigDecimal(1000), 1L);
+			when(userServiceClient.validateOrderAndGetAccountId(any()))
+					.thenReturn(new ResponseEntity<>(new OrderValidationResponse(1L), HttpStatus.OK));
 
 			assertThatNoException().isThrownBy(() -> orderService.placeOrder(params));
 		}
@@ -72,7 +67,9 @@ class OrderServiceTest {
 		void placeOrderWhenPriceWithinUpperLimit() {
 			// given
 			BigDecimal price = new BigDecimal(1300);
-			CreateOrderDto params = createCreateOrderParams(Type.LIMIT_BUY, new BigDecimal(1), price, 1L);
+			BeforeTradeOrderDto params = createBeforeTradeOrderDto(Type.LIMIT_BUY, new BigDecimal(1), price, 1L);
+			when(userServiceClient.validateOrderAndGetAccountId(any()))
+					.thenReturn(new ResponseEntity<>(new OrderValidationResponse(1L), HttpStatus.OK));
 
 			// when, then
 			assertThatNoException().isThrownBy(() -> orderService.placeOrder(params));
@@ -83,7 +80,7 @@ class OrderServiceTest {
 		void throwExceptionWhenPriceExceedsUpperLimit() {
 			// given
 			BigDecimal price = new BigDecimal(1301);
-			CreateOrderDto params = createCreateOrderParams(Type.LIMIT_SELL, new BigDecimal(10), price, 1L);
+			BeforeTradeOrderDto params = createBeforeTradeOrderDto(Type.LIMIT_SELL, new BigDecimal(10), price, 1L);
 
 			// when, then
 			assertThatThrownBy(() -> orderService.placeOrder(params)).isInstanceOf(PriceOutOfRangeException.class);
@@ -94,7 +91,9 @@ class OrderServiceTest {
 		void placeOrderWhenPriceWithinLowerLimit() {
 			// given
 			BigDecimal price = new BigDecimal(700);
-			CreateOrderDto params = createCreateOrderParams(Type.LIMIT_BUY, new BigDecimal(10), price, 1L);
+			BeforeTradeOrderDto params = createBeforeTradeOrderDto(Type.LIMIT_BUY, new BigDecimal(10), price, 1L);
+			when(userServiceClient.validateOrderAndGetAccountId(any()))
+					.thenReturn(new ResponseEntity<>(new OrderValidationResponse(1L), HttpStatus.OK));
 
 			// when, then
 			assertThatNoException().isThrownBy(() -> orderService.placeOrder(params));
@@ -105,7 +104,7 @@ class OrderServiceTest {
 		void throwExceptionWhenPriceIsBelowLowerLimit() {
 			// given
 			BigDecimal price = new BigDecimal(699);
-			CreateOrderDto params = createCreateOrderParams(Type.LIMIT_BUY, new BigDecimal(10), price, 1L);
+			BeforeTradeOrderDto params = createBeforeTradeOrderDto(Type.LIMIT_BUY, new BigDecimal(10), price, 1L);
 
 			// when, then
 			assertThatThrownBy(() -> orderService.placeOrder(params))
@@ -117,7 +116,7 @@ class OrderServiceTest {
 		void throwExceptionWhenInvalidPrice() {
 			// given
 			BigDecimal price = new BigDecimal(-1);
-			CreateOrderDto params = createCreateOrderParams(Type.LIMIT_BUY, new BigDecimal(10), price, 1L);
+			BeforeTradeOrderDto params = createBeforeTradeOrderDto(Type.LIMIT_BUY, new BigDecimal(10), price, 1L);
 
 			// when, then
 			assertThatThrownBy(() -> orderService.placeOrder(params)).isInstanceOf(OrderPriceQuotationException.class);
@@ -128,7 +127,7 @@ class OrderServiceTest {
 		void throwExceptionWhenInvalidUnitPrice() {
 			// given
 			BigDecimal price = new BigDecimal("0.5");
-			CreateOrderDto params = createCreateOrderParams(Type.LIMIT_BUY, new BigDecimal(10), price, 1L);
+			BeforeTradeOrderDto params = createBeforeTradeOrderDto(Type.LIMIT_BUY, new BigDecimal(10), price, 1L);
 
 			// when, then
 			assertThatThrownBy(() -> orderService.placeOrder(params)).isInstanceOf(OrderPriceQuotationException.class);
@@ -136,74 +135,36 @@ class OrderServiceTest {
 	}
 
 	@Nested
-	@DisplayName("매도 주문일 경우 보유 주식 개수를 확인하고, 예약 주문 개수를 저장한다.")
-	class SellOrderReservation {
+	@DisplayName("user-service와의 통신 테스트")
+	public class communicationWithUserService {
 
 		@Test
-		@DisplayName("매도 주문일 경우, 입력한 종목에 대한 보유 주식이 없을 경우 예외가 발생한다.")
-		void throwExceptionWhenSellingStockWithoutHoldingAny() {
+		@DisplayName("")
+		void communicationWithUserService() {
 			// given
-			CreateOrderDto params = createCreateOrderParams(Type.LIMIT_SELL, new BigDecimal(1), new BigDecimal(1000),
-					1L);
+			BigDecimal price = new BigDecimal(1300);
+			BeforeTradeOrderDto params = createBeforeTradeOrderDto(Type.LIMIT_BUY, new BigDecimal(1), price, 1L);
+			when(userServiceClient.validateOrderAndGetAccountId(any()))
+					.thenThrow(new HttpClientErrorException(HttpStatus.NOT_FOUND));
 
 			// when, then
 			assertThatThrownBy(() -> orderService.placeOrder(params))
-					.isInstanceOf(HoldingsNotFoundException.class);
-		}
-
-		@Test
-		@DisplayName("매도 주문일 경우, 입력한 종목에 대한 보유 주식의 개수가 부족할 경우 예외가 발생한다.")
-		void throwExceptionWhenSellingExceedingOwnedQuantity() {
-			// given
-			CreateOrderDto params = createCreateOrderParams(Type.LIMIT_SELL, new BigDecimal(100),
-					new BigDecimal(1000), 1L);
-			Holdings holdings = createHoldings(new BigDecimal(10));
-			holdingsRepository.save(holdings);
-
-			// when, then
-			assertThatThrownBy(() -> orderService.placeOrder(params))
-					.isInstanceOf(InsufficientHoldingsException.class);
+					.isInstanceOf(HttpClientErrorException.class);
 		}
 	}
 
-	private OrderRequest createOrderRequest(
-			Type type,
-			BigDecimal totalQuantity,
-			BigDecimal price
-	) {
-		return new OrderRequest(
-				"005930",
-				type,
-				totalQuantity,
-				price,
-				LocalDateTime.of(2025, 1, 1, 1, 1)
-		);
-	}
-
-	private CreateOrderDto createCreateOrderParams(
+	private BeforeTradeOrderDto createBeforeTradeOrderDto(
 			Type type,
 			BigDecimal totalQuantity,
 			BigDecimal price,
 			Long memberId
 	) {
-		return new CreateOrderDto(
+		return new BeforeTradeOrderDto(
 				"005930",
 				type,
 				totalQuantity,
 				price,
-				LocalDateTime.of(2025, 1, 1, 1, 1),
 				memberId
 		);
-	}
-
-	private Holdings createHoldings(BigDecimal quantity) {
-		return Holdings.builder()
-				.companyCode("005930")
-				.quantity(quantity)
-				.reservedQuantity(new BigDecimal(0))
-				.averagePrice(new BigDecimal(1000))
-				.totalPurchasePrice(new BigDecimal(10000))
-				.accountId(1L)
-				.build();
 	}
 }
