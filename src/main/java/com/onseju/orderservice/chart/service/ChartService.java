@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -468,8 +469,7 @@ public class ChartService {
 		final CandleDto lastCandle = candles.get(candles.size() - 1);
 
 		if (!lastCandle.time().equals(currentCandleTime)) {
-			handleDifferentCandleTime(
-					companyCode, timeFrame, companyTimeFrameMap, candles, lastCandle, currentCandleTime);
+			handleDifferentCandleTime(timeFrame, companyTimeFrameMap, candles, lastCandle, currentCandleTime);
 		} else {
 			log.debug("종목 {}의 {}분봉 캔들 업데이트: 현재 캔들 시간과 마지막 캔들 시간이 동일 ({})",
 					companyCode, timeFrame.getTimeCode(), Instant.ofEpochSecond(currentCandleTime));
@@ -480,7 +480,6 @@ public class ChartService {
 	 * 마지막 캔들과 다른 시간의 캔들 처리
 	 */
 	private void handleDifferentCandleTime(
-			final String companyCode,
 			final TimeFrame timeFrame,
 			final Map<TimeFrame, List<CandleDto>> companyTimeFrameMap,
 			final List<CandleDto> candles,
@@ -572,6 +571,13 @@ public class ChartService {
 		final Queue<TradeHistory> trades = recentTradesMap.get(companyCode);
 		return trades == null || trades.isEmpty() ?
 				Optional.empty() : Optional.of(trades.peek());
+	}
+
+	/**
+	 * 활성화된 모든 종목 코드 목록 조회
+	 */
+	public Set<String> getActiveCompanyCodes() {
+		return recentTradesMap.keySet();
 	}
 
 	/**

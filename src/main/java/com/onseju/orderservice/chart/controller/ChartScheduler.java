@@ -1,5 +1,7 @@
 package com.onseju.orderservice.chart.controller;
 
+import java.util.Set;
+
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
@@ -21,8 +23,6 @@ public class ChartScheduler {
 	private final ChartService chartService;
 	private final SimpMessagingTemplate messagingTemplate;
 
-	// 기본 종목 코드
-	private static final String DEFAULT_COMPANY_CODE = "005930";
 	private static final String TOPIC_TEMPLATE = "/topic/candle/%s/%s";
 
 	/**
@@ -30,7 +30,7 @@ public class ChartScheduler {
 	 */
 	@Scheduled(fixedRate = 15000)
 	public void sendCandleUpdates15Sec() {
-		sendCandleUpdates(DEFAULT_COMPANY_CODE, TimeFrame.SECONDS_15);
+		updateCandlesForAllActiveStocks(TimeFrame.SECONDS_15);
 	}
 
 	/**
@@ -38,7 +38,7 @@ public class ChartScheduler {
 	 */
 	@Scheduled(fixedRate = 60000)
 	public void sendCandleUpdates1Min() {
-		sendCandleUpdates(DEFAULT_COMPANY_CODE, TimeFrame.MINUTE_1);
+		updateCandlesForAllActiveStocks(TimeFrame.MINUTE_1);
 	}
 
 	/**
@@ -46,7 +46,7 @@ public class ChartScheduler {
 	 */
 	@Scheduled(fixedRate = 300000)
 	public void sendCandleUpdates5Min() {
-		sendCandleUpdates(DEFAULT_COMPANY_CODE, TimeFrame.MINUTE_5);
+		updateCandlesForAllActiveStocks(TimeFrame.MINUTE_5);
 	}
 
 	/**
@@ -54,7 +54,7 @@ public class ChartScheduler {
 	 */
 	@Scheduled(fixedRate = 900000)
 	public void sendCandleUpdates15Min() {
-		sendCandleUpdates(DEFAULT_COMPANY_CODE, TimeFrame.MINUTE_15);
+		updateCandlesForAllActiveStocks(TimeFrame.MINUTE_15);
 	}
 
 	/**
@@ -62,7 +62,7 @@ public class ChartScheduler {
 	 */
 	@Scheduled(fixedRate = 1800000)
 	public void sendCandleUpdates30Min() {
-		sendCandleUpdates(DEFAULT_COMPANY_CODE, TimeFrame.MINUTE_30);
+		updateCandlesForAllActiveStocks(TimeFrame.MINUTE_30);
 	}
 
 	/**
@@ -70,7 +70,25 @@ public class ChartScheduler {
 	 */
 	@Scheduled(fixedRate = 3600000)
 	public void sendCandleUpdates1Hour() {
-		sendCandleUpdates(DEFAULT_COMPANY_CODE, TimeFrame.HOUR_1);
+		updateCandlesForAllActiveStocks(TimeFrame.HOUR_1);
+	}
+
+	/**
+	 * 모든 활성화된 종목에 대해 캔들 업데이트 수행
+	 */
+	private void updateCandlesForAllActiveStocks(final TimeFrame timeFrame) {
+		// 활성화된 모든 종목 코드 목록 조회
+		final Set<String> activeCompanyCodes = chartService.getActiveCompanyCodes();
+
+		if (activeCompanyCodes.isEmpty()) {
+			log.info("활성화된 종목 코드가 없습니다. 캔들 업데이트를 건너뜁니다.");
+			return;
+		}
+
+		// 각 종목별로 캔들 업데이트 수행
+		for (String companyCode : activeCompanyCodes) {
+			sendCandleUpdates(companyCode, timeFrame);
+		}
 	}
 
 	/**
