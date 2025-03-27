@@ -38,7 +38,7 @@ public class OrderEventListener {
 	 * 주문 매칭 이벤트 처리
 	 * 매칭 엔진에서 매칭이 발생하면 거래 내역 생성
 	 */
-	@RabbitListener(queues = RabbitMQConfig.ORDER_MATCHED_QUEUE)
+	@RabbitListener(queues = RabbitMQConfig.MATCHING_RESULT_QUEUE)
 	public void handleOrderMatched(final MatchedEvent event) {
 		// 체결 내역 저장
 		final TradeHistory tradeHistory = tradeHistoryMapper.toEntity(event);

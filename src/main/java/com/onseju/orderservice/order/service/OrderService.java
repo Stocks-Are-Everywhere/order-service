@@ -2,10 +2,11 @@ package com.onseju.orderservice.order.service;
 
 import com.onseju.orderservice.company.domain.Company;
 import com.onseju.orderservice.company.service.repository.CompanyRepository;
-import com.onseju.orderservice.events.CreatedEvent;
+import com.onseju.orderservice.events.OrderCreatedEvent;
 import com.onseju.orderservice.events.MatchedEvent;
 import com.onseju.orderservice.events.OrderBookSyncedEvent;
 import com.onseju.orderservice.events.UpdateEvent;
+import com.onseju.orderservice.events.publisher.EventPublisher;
 import com.onseju.orderservice.events.publisher.OrderEventPublisher;
 import com.onseju.orderservice.order.client.UserServiceClient;
 import com.onseju.orderservice.order.domain.Order;
@@ -31,7 +32,8 @@ public class OrderService {
 
 	private final OrderRepository orderRepository;
 	private final CompanyRepository companyRepository;
-	private final OrderEventPublisher eventPublisher;
+	private final EventPublisher<OrderCreatedEvent> orderEventPublisher;
+	private final EventPublisher<MatchedEvent> matchedEventPublisher;
 	private final UserServiceClient userServiceClient;
 	private final OrderMapper orderMapper;
 
@@ -50,8 +52,8 @@ public class OrderService {
 		final Order savedOrder = orderRepository.save(order);
 
 		// 주문 생성 이벤트 발행
-		final CreatedEvent event = orderMapper.toEvent(savedOrder);
-		eventPublisher.publishOrderCreated(event);
+		final OrderCreatedEvent event = orderMapper.toEvent(savedOrder);
+		orderEventPublisher.publishEvent(event);
 	}
 
 	/**
@@ -97,17 +99,6 @@ public class OrderService {
 	 * 매칭 후, 사용자 업데이트 이벤트 발행
 	 */
 	public void publishUserUpdateEvent(final MatchedEvent event) {
-		final UpdateEvent updateEvent = UpdateEvent.builder()
-				.companyCode(event.companyCode())
-				.buyOrderId(event.buyOrderId())
-				.buyAccountId(event.buyAccountId())
-				.sellOrderId(event.sellOrderId())
-				.sellAccountId(event.sellAccountId())
-				.quantity(event.quantity())
-				.price(event.price())
-				.tradeAt(event.tradeAt())
-				.build();
-
-		eventPublisher.publishUserUpdate(updateEvent);
+		matchedEventPublisher.publishEvent(event);
 	}
 }
