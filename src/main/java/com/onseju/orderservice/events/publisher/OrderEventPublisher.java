@@ -1,41 +1,56 @@
 package com.onseju.orderservice.events.publisher;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
-import com.onseju.orderservice.events.CreatedEvent;
-import com.onseju.orderservice.events.UpdateEvent;
+import com.onseju.orderservice.events.OrderCreatedEvent;
+import com.onseju.orderservice.events.exception.OrderEventPublisherFailException;
 import com.onseju.orderservice.global.config.RabbitMQConfig;
 
 import lombok.extern.slf4j.Slf4j;
 
-/**
- * 주문 메세지 서비스 이벤트 발행 담당
- * 도메인 이벤트를 RabbitMQ를 통해 발행하는 기능 제공
- */
+@Component
 @Slf4j
-@Service
-public class OrderEventPublisher {
+public class OrderEventPublisher extends AbstractEventPublisher<OrderCreatedEvent> {
 
-	private final RabbitTemplate rabbitTemplate;
+    public OrderEventPublisher(RabbitTemplate rabbitTemplate) {
+        super(rabbitTemplate);
+    }
 
-	public OrderEventPublisher(final RabbitTemplate rabbitTemplate) {
-		this.rabbitTemplate = rabbitTemplate;
-	}
+    @Override
+    protected void validateEvent(OrderCreatedEvent event) {
+        if (event == null || event.id() == null) {
+            throw new IllegalArgumentException("Invalid order event");
+        }
+    }
 
-	/**
-	 * 주문 생성 이벤트 발행
-	 */
-	public void publishOrderCreated(final CreatedEvent event) {
-		rabbitTemplate.convertAndSend(
-				RabbitMQConfig.ONSEJU_EXCHANGE, RabbitMQConfig.ORDER_CREATED_KEY, event);
-	}
+    @Override
+    protected void doPublish(OrderCreatedEvent event) {
+        try {
+            publishOrderCreatedEventToOrderService(event);
+            publishOrderCreatedEventToMatchingEngine(event);
+            log.info("주문 이벤트 발행 완료. orderId: {}", event.id());
+        } catch (Exception ex) {
+            log.error("주문 이벤트 발행 중 오류 발생. orderId: {}", event.id(), ex);
+            throw new OrderEventPublisherFailException();
+        }
+    }
 
-	/**
-	 * 매칭 후, 사용자 업데이트 이벤트 발행
-	 */
-	public void publishUserUpdate(final UpdateEvent event) {
-		rabbitTemplate.convertAndSend(
-				RabbitMQConfig.ONSEJU_EXCHANGE, RabbitMQConfig.USER_UPDATE_KEY, event);
-	}
+    private void publishOrderCreatedEventToOrderService(OrderCreatedEvent event) {
+        sendMessage(
+            RabbitMQConfig.ONSEJU_EXCHANGE,
+            RabbitMQConfig.ORDER_CREATED_KEY,
+            event,
+            "order-" + event.id()
+        );
+    }
+
+    private void publishOrderCreatedEventToMatchingEngine(OrderCreatedEvent event) {
+        sendMessage(
+            RabbitMQConfig.ONSEJU_EXCHANGE,
+            RabbitMQConfig.MATCHING_REQUEST_KEY,
+            event,
+            "matching-" + event.id()
+        );
+    }
 }
