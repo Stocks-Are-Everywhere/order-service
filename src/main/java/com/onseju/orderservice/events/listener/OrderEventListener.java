@@ -59,6 +59,9 @@ public class OrderEventListener {
 
 		orderService.updateRemainingQuantity(buyOrder);
 		orderService.updateRemainingQuantity(sellOrder);
+
+		// 매칭 후, 사용자 업데이트 이벤트 발행
+		orderService.publishUserUpdateEvent(event);
 	}
 
 	/**
@@ -66,7 +69,6 @@ public class OrderEventListener {
 	 */
 	@RabbitListener(queues = RabbitMQConfig.ORDER_BOOK_SYNCED_QUEUE)
 	public void handleOrderBookSynced(final OrderBookSyncedEvent event) {
-		log.info("호가창 이벤트 발행");
 		orderService.broadcastOrderBookUpdate(event);
 	}
 }

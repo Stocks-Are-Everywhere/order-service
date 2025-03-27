@@ -1,6 +1,78 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: order-service
+
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate.ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate.criteria.literal_handling_mode: BIND
+      hibernate:
+        connection.CharSet: UTF-8
+        connection.characterEncoding: UTF-8
+        connection.useUnicode: true
+        format_sql: true
+
+    database-platform: org.hibernate.dialect.MySQL8Dialect
+
+  logging.level:
+    org.hibernate.SQL: debug
+    org.hibernate.type: trace
+#    # WebSocket ???
+#    org.springframework.web.socket: DEBUG
+
+  ki:
+    appKey: ${KOREAINVEST_CLIENT_ID}
+    appSecret: ${KOREAINVEST_CLIENT_SECRET}
+    accountNo: ""
+
+  rabbitmq:
+    host: ${RABBITMQ_HOST}
+    port: ${RABBITMQ_PORT}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
+webSocket:
+  server:
+    websocketKey: ${KOREAINVEST_WEBSOCKET_KEY}
+    url: ${KOREAINVEST_API_URL}
+
+jwt:
+  secret:
+    key: ${JWT_SECRET_KEY}
+
+tsid:
+  node-id: ${TSID_NODE_ID}
+  use-secure-random: false  # 보안 강화된 난수 생성기 사용 여부
+  batch-size: 1000  # ID 배치 생성 시 크기
+
+google:
+  client:
+    id: ${GOOGLE_CLIENT_ID}
+    secret: ${GOOGLE_CLIENT_SECRET}
+  redirect:
+    uri: ${GOOGLE_REDIRECT_URI}
+  token:
+    uri: ${GOOGLE_TOKEN_URI}
+  userinfo:
+    uri: ${GOOGLE_USER_INFO}
+
+user-service:
+  url: ${USER_SERVICE_BASE_URL}
+  
 grpc:
   client:
     order-service:
       address: static://user-service:9090
       negotiation-type: PLAINTEXT
-
