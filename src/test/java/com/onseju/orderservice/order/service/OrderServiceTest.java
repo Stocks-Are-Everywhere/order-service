@@ -1,5 +1,6 @@
 package com.onseju.orderservice.order.service;
 
+import com.onseju.orderservice.events.publisher.MatchedEventPublisher;
 import com.onseju.orderservice.events.publisher.OrderEventPublisher;
 import com.onseju.orderservice.fake.FakeOrderRepository;
 import com.onseju.orderservice.order.client.UserServiceClient;
@@ -34,14 +35,16 @@ class OrderServiceTest {
 	FakeOrderRepository orderRepository = new FakeOrderRepository();
 	OrderMapper orderMapper = new OrderMapper();
 	OrderEventPublisher eventPublisher;
+	MatchedEventPublisher matchedEventPublisher;
 	UserServiceClient userServiceClient;
 
 	@BeforeEach
 	void setUp() {
 		eventPublisher = Mockito.mock(OrderEventPublisher.class);
+		matchedEventPublisher = Mockito.mock(MatchedEventPublisher.class);
 		userServiceClient = Mockito.mock(UserServiceClient.class);
 		SimpMessagingTemplate messagingTemplate = Mockito.mock(SimpMessagingTemplate.class);
-		orderService = new OrderService(orderRepository, companyRepository, eventPublisher, userServiceClient, orderMapper, messagingTemplate);
+		orderService = new OrderService(orderRepository, companyRepository, eventPublisher, matchedEventPublisher, userServiceClient, orderMapper, messagingTemplate);
 	}
 
 	@Nested
@@ -136,7 +139,7 @@ class OrderServiceTest {
 
 	@Nested
 	@DisplayName("user-service와의 통신 테스트")
-	public class communicationWithUserService {
+	public class CommunicationWithUserService {
 
 		@Test
 		@DisplayName("외부 모듈과 통신을 실패할 경우 예외를 발생시킨다.")

@@ -28,6 +28,7 @@ repositories {
 ext {
     grpcVersion = '1.69.0'
     protobufVersion = '3.25.3'
+}
 
 ext {
     set('springCloudVersion', '2024.0.0')
