@@ -1,35 +1,38 @@
 package com.onseju.orderservice.order.mapper;
 
-import static org.assertj.core.api.Assertions.*;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
+import com.onseju.orderservice.company.controller.response.CompanySearchResponse;
+import com.onseju.orderservice.company.domain.Company;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import com.onseju.orderservice.events.mapper.OrderMapper;
-import com.onseju.orderservice.order.domain.Order;
-import com.onseju.orderservice.order.domain.Type;
-import com.onseju.orderservice.order.dto.CreateOrderDto;
+import java.math.BigDecimal;
 
-class OrderMapperTest {
+import static org.assertj.core.api.Assertions.assertThat;
 
-	private final OrderMapper orderMapper = new OrderMapper();
+@Nested
+@DisplayName("Entity & Dto 변환 테스트")
+class CompanyMapperTest {
+
+	CompanyMapper mapper = new CompanyMapper();
 
 	@Test
-	@DisplayName("OrderRequest를 Entity로 변환한다.")
-	void toEntity() {
+	void toCompanySearchResponse() {
 		// given
-		String companyCode = "005930";
-		CreateOrderDto createOrderParams = new CreateOrderDto("005930", Type.LIMIT_BUY, new BigDecimal(100),
-				new BigDecimal(1000), LocalDateTime.now(), 1L);
-
+		Company company = Company.builder()
+			.isuCd("005930")
+			.isuSrtCd("005930")
+			.isuNm("삼성전자")
+			.isuAbbrv("KOSPI")
+			.isuEngNm("주권")
+			.kindStkcertTpNm("삼성전자")
+			.closingPrice(new BigDecimal(1000))
+			.build();
 		// when
-		Order order = orderMapper.toEntity(createOrderParams, 1L);
+		CompanySearchResponse response = mapper.toCompanySearchResponse(company);
 
 		// then
-		assertThat(order).isNotNull();
-		assertThat(order.getCompanyCode()).isEqualTo(companyCode);
+		assertThat(response).isNotNull();
+		assertThat(response.isuNm()).isEqualTo("삼성전자");
 	}
 }
