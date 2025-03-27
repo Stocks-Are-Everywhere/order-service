@@ -1,16 +1,14 @@
 package com.onseju.orderservice.company.mapper;
 
-import static org.assertj.core.api.Assertions.*;
-
-import java.math.BigDecimal;
-
+import com.onseju.orderservice.company.controller.response.CompanySearchResponse;
+import com.onseju.orderservice.company.domain.Company;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-import com.onseju.orderservice.company.controller.response.CompanySearchResponse;
-import com.onseju.orderservice.company.domain.Company;
-import com.onseju.orderservice.events.mapper.CompanyMapper;
+import java.math.BigDecimal;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Nested
 @DisplayName("Entity & Dto 변환 테스트")

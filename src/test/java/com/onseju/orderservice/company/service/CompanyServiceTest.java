@@ -1,11 +1,9 @@
 package com.onseju.orderservice.company.service;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-import java.math.BigDecimal;
-import java.util.List;
-
+import com.onseju.orderservice.company.controller.response.CompanySearchResponse;
+import com.onseju.orderservice.company.domain.Company;
+import com.onseju.orderservice.company.mapper.CompanyMapper;
+import com.onseju.orderservice.company.service.repository.CompanyRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -14,10 +12,11 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.onseju.orderservice.company.controller.response.CompanySearchResponse;
-import com.onseju.orderservice.company.domain.Company;
-import com.onseju.orderservice.company.service.repository.CompanyRepository;
-import com.onseju.orderservice.events.mapper.CompanyMapper;
+import java.math.BigDecimal;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CompanyServiceTest {

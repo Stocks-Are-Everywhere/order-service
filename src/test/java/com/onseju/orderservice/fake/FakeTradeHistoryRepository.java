@@ -1,10 +1,11 @@
 package com.onseju.orderservice.fake;
 
-import java.util.Comparator;
-import java.util.concurrent.ConcurrentSkipListSet;
-
 import com.onseju.orderservice.tradehistory.domain.TradeHistory;
 import com.onseju.orderservice.tradehistory.service.repository.TradeHistoryRepository;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.ConcurrentSkipListSet;
 
 public class FakeTradeHistoryRepository implements TradeHistoryRepository {
 
@@ -46,5 +47,15 @@ public class FakeTradeHistoryRepository implements TradeHistoryRepository {
 				.filter(o -> o.getId().equals(id))
 				.findAny()
 				.orElse(null);
+	}
+
+	@Override
+	public List<String> findDistinctCompanyCodes() {
+		return List.of();
+	}
+
+	@Override
+	public List<TradeHistory> findRecentTradesByCompanyCode(String companyCode, Integer limit) {
+		return List.of();
 	}
 }
