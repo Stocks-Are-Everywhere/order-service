@@ -28,9 +28,14 @@ public class StubCompanyRepository implements CompanyRepository {
 	public List<Company> findAll() {
 		return List.of(company);
 	}
-
+	
 	@Override
 	public void save(Company company) {
+
+	}
+
+	@Override
+	public void saveAll(List<Company> companies) {
 
 	}
 
@@ -38,4 +43,5 @@ public class StubCompanyRepository implements CompanyRepository {
 	public Company findByIsuSrtCd(String isuSrt) {
 		return company;
 	}
+
 }

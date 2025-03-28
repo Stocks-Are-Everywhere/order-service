@@ -80,4 +80,11 @@ public class Company {
 		return closingPrice.multiply(new BigDecimal(100).add(priceLimit))
 				.divide(percentageDivisor, RoundingMode.HALF_UP);
 	}
+
+	/**
+	 * 종가 업데이트 메서드
+	 */
+	public void updateClosingPrice(final BigDecimal closingPrice) {
+		this.closingPrice = closingPrice;
+	}
 }
