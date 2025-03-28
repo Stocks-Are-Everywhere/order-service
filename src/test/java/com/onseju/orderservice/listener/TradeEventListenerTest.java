@@ -23,8 +23,20 @@ import com.onseju.orderservice.order.mapper.OrderMapper;
 import com.onseju.orderservice.order.service.OrderService;
 import com.onseju.orderservice.order.service.repository.OrderRepository;
 import com.onseju.orderservice.tradehistory.mapper.TradeHistoryMapper;
+import com.onseju.orderservice.tradehistory.repository.TradeHistoryJpaRepository;
 import com.onseju.orderservice.tradehistory.service.TradeHistoryService;
-import com.onseju.orderservice.tradehistory.service.repository.TradeHistoryRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDateTime;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 
 @SpringBootTest()
 class TradeEventListenerTest {
@@ -48,7 +60,7 @@ class TradeEventListenerTest {
 	ChartService chartService;
 
 	@Autowired
-	private TradeHistoryRepository tradeHistoryRepository;
+	private TradeHistoryJpaRepository tradeHistoryJpaRepository;
 
 	@Autowired
 	private OrderRepository orderRepository;

@@ -3,6 +3,7 @@ package com.onseju.orderservice.tradehistory.repository;
 import java.util.List;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import com.onseju.orderservice.tradehistory.domain.TradeHistory;
@@ -31,4 +32,27 @@ public class TradeHistoryRepositoryImpl implements TradeHistoryRepository {
 		return tradeHistoryJpaRepository.findRecentTradesByCompanyCode(companyCode, PageRequest.of(0, limit));
 	}
 
+	/**
+	 * 회사별 총 거래액 조회
+	 */
+	@Override
+	public List<Object[]> findTotalTradeAmountByCompany(Pageable pageable) {
+		return tradeHistoryJpaRepository.findTotalTradeAmountByCompany(pageable);
+	}
+
+	/**
+	 * 회사별 평균 가격 조회
+	 */
+	@Override
+	public List<Object[]> findTradeAvgPriceByCompany(Pageable pageable) {
+		return tradeHistoryJpaRepository.findTradeAvgPriceByCompany(pageable);
+	}
+
+	/**
+	 * 회사별 거래 건수 조회
+	 */
+	@Override
+	public List<Object[]> findTradeCountByCompany(Pageable pageable) {
+		return tradeHistoryJpaRepository.findTradeCountByCompany(pageable);
+	}
 }

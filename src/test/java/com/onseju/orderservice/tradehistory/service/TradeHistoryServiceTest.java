@@ -2,7 +2,6 @@ package com.onseju.orderservice.tradehistory.service;
 
 import com.onseju.orderservice.fake.FakeTradeHistoryRepository;
 import com.onseju.orderservice.tradehistory.domain.TradeHistory;
-import com.onseju.orderservice.tradehistory.mapper.TradeHistoryMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,7 +14,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class TradeHistoryServiceTest {
 
 	private FakeTradeHistoryRepository tradeHistoryRepository;
-	private TradeHistoryMapper tradeHistoryMapper = new TradeHistoryMapper();
 	private TradeHistoryService tradeHistoryService;
 
 	@BeforeEach
@@ -29,20 +27,20 @@ class TradeHistoryServiceTest {
 	void save() {
 		// given
 		TradeHistory tradeHistory = TradeHistory.builder()
-				.id(1L)
-				.companyCode("005930")
-				.sellOrderId(1L)
-				.buyOrderId(2L)
-				.price(new BigDecimal(100))
-				.quantity(new BigDecimal(100))
-				.tradeTime(Instant.now().toEpochMilli())
-				.build();
+			.id(1L)
+			.companyCode("005930")
+			.sellOrderId(1L)
+			.buyOrderId(2L)
+			.price(new BigDecimal(100))
+			.quantity(new BigDecimal(100))
+			.tradeTime(Instant.now().getEpochSecond())
+			.build();
 
 		// when
 		tradeHistoryService.saveTradeHistory(tradeHistory);
 
 		// then
-		TradeHistory saved = tradeHistoryRepository.findById(1L);
+		TradeHistory saved = tradeHistoryRepository.findById(1L).orElse(null);
 		assertThat(saved).isNotNull();
 		assertThat(saved.getCompanyCode()).isEqualTo(tradeHistory.getCompanyCode());
 		assertThat(saved.getSellOrderId()).isEqualTo(tradeHistory.getSellOrderId());

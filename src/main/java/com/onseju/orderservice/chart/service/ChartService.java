@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -91,7 +92,6 @@ public class ChartService {
 	}
 
 	/**
-	 * 특정 종목의 캔들 초기화
 	 */
 	private void initializeCandlesForCompany(final String companyCode) {
 		final ReentrantReadWriteLock lock = companyLocks.get(companyCode);

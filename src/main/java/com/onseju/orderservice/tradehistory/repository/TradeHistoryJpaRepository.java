@@ -22,4 +22,24 @@ public interface TradeHistoryJpaRepository extends JpaRepository<TradeHistory, L
 	@Query("SELECT t FROM TradeHistory t WHERE t.companyCode = :companyCode ORDER BY t.tradeTime DESC")
 	List<TradeHistory> findRecentTradesByCompanyCode(@Param("companyCode") String companyCode, Pageable pageable);
 
+	/**
+	 * 회사별 총 거래액 조회
+	 */
+	@Query("SELECT t.companyCode, SUM(t.price * t.quantity) as totalAmount " +
+		"FROM TradeHistory t GROUP BY t.companyCode ORDER BY totalAmount DESC")
+	List<Object[]> findTotalTradeAmountByCompany(Pageable pageable);
+
+	/**
+	 * 회사별 평균 가격 조회
+	 */
+	@Query("SELECT t.companyCode, AVG(t.price) as avgPrice " +
+		"FROM TradeHistory t GROUP BY t.companyCode ORDER BY avgPrice DESC")
+	List<Object[]> findTradeAvgPriceByCompany(Pageable pageable);
+
+	/**
+	 * 회사별 거래 건수 조회
+	 */
+	@Query("SELECT t.companyCode, COUNT(t) as tradeCount " +
+		"FROM TradeHistory t GROUP BY t.companyCode ORDER BY tradeCount DESC")
+	List<Object[]> findTradeCountByCompany(Pageable pageable);
 }
