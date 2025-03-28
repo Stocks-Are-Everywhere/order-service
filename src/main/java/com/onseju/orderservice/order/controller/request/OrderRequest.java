@@ -12,6 +12,5 @@ public record OrderRequest(
 		Type type,
 		BigDecimal totalQuantity,
 		BigDecimal price,
-		Long accountId
 ) {
 }
