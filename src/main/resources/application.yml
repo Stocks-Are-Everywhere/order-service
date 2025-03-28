@@ -12,7 +12,7 @@ spring:
     password: ${DB_PASSWORD}
 
   jpa:
-    hibernate.ddl-auto: create
+    hibernate.ddl-auto: update
     show-sql: true
     properties:
       hibernate.criteria.literal_handling_mode: BIND
@@ -56,3 +56,23 @@ tsid:
   node-id: ${TSID_NODE_ID}
   use-secure-random: false  # 보안 강화된 난수 생성기 사용 여부
   batch-size: 1000  # ID 배치 생성 시 크기
+
+google:
+  client:
+    id: ${GOOGLE_CLIENT_ID}
+    secret: ${GOOGLE_CLIENT_SECRET}
+  redirect:
+    uri: ${GOOGLE_REDIRECT_URI}
+  token:
+    uri: ${GOOGLE_TOKEN_URI}
+  userinfo:
+    uri: ${GOOGLE_USER_INFO}
+
+user-service:
+  url: ${USER_SERVICE_BASE_URL}
+  
+grpc:
+  client:
+    order-service:
+      address: static://user-service:9090
+      negotiation-type: PLAINTEXT

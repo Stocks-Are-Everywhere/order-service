@@ -1,17 +1,16 @@
 package com.onseju.orderservice.order.dto;
 
-import java.math.BigDecimal;
-
 import com.onseju.orderservice.order.domain.Type;
-
 import lombok.Builder;
+
+import java.math.BigDecimal;
 
 @Builder
 public record BeforeTradeOrderDto(
 		String companyCode,
-		Type type,
+		String type,
 		BigDecimal totalQuantity,
 		BigDecimal price,
-		Long accountId
+		Long memberId
 ) {
 }

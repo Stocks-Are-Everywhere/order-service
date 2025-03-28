@@ -1,13 +1,9 @@
 spring:
-
   datasource:
     url: jdbc:h2:mem:testdb
     driver-class-name: org.h2.Driver
     username: sa
     password:
-
-  config:
-    import: classpath:/env.properties
 
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
@@ -15,6 +11,17 @@ spring:
       ddl-auto: create-drop
     show-sql: false
 
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: admin
+    password: admin123
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
 jwt:
   secret:
-    key: ${JWT_SECRET_KEY}
+    key: "dGVzdC1vbnNlamUtanRzLXNlY3JldC1rZXktMTIzNDU2Nzg5MA=="
+
+user-service:
+  url: "http://localhost:8080"

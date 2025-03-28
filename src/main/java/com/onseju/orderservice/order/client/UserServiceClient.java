@@ -1,36 +1,50 @@
 package com.onseju.orderservice.order.client;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.springframework.http.HttpEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 
+import net.devh.boot.grpc.client.inject.GrpcClient;
+
+import com.onseju.orderservice.grpc.GrpcValidateResponse;
+import com.onseju.orderservice.grpc.GrpcValidateRequest;
+import com.onseju.orderservice.grpc.OrderValidationServiceGrpc;
 import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
+import com.onseju.orderservice.order.dto.OrderValidationResponse;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import lombok.AllArgsConstructor;
 
-@Slf4j
+@AllArgsConstructor
 @Service
-@RequiredArgsConstructor
 public class UserServiceClient {
 
-	private final RestTemplate restTemplate;
+	@GrpcClient("order-service")
+	private OrderValidationServiceGrpc.OrderValidationServiceBlockingStub orderValidationServiceBlockingStub;
 
-	private final String userServiceUrl = "http://localhost:8083";
+	public OrderValidationResponse validateOrder(BeforeTradeOrderDto dto) {
 
-	public void validateAccountAndHoldings(final BeforeTradeOrderDto dto) {
-		final String url = userServiceUrl + "/api/user-service/validate";
-		Map<String, Object> payload = new HashMap<>();
-		payload.put("companyCode", dto.companyCode());
-		payload.put("type", dto.type());
-		payload.put("totalQuantity", dto.totalQuantity());
-		payload.put("price", dto.price());
-		payload.put("accountId", dto.accountId());
+		try {
 
-		HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload);
-		restTemplate.postForEntity(url, request, Void.class);
+			GrpcValidateRequest request = GrpcValidateRequest.newBuilder()
+				.setCompanyCode(dto.companyCode())
+				.setType(dto.type())
+				.setTotalQuantity(dto.totalQuantity().toPlainString())
+				.setPrice(dto.price().toPlainString())
+				.setMemberId(dto.memberId())
+				.build();
+
+			GrpcValidateResponse response = orderValidationServiceBlockingStub.validateOrder(request);
+
+			// gRPC 응답을 ValidateResponse 객체로 변환
+			OrderValidationResponse validateResponse = OrderValidationResponse.builder()
+				.accountId(response.getAccountId())
+				.result(response.getResult())
+				.build();
+
+			return validateResponse;
+		} catch (Exception e) {
+			throw new RuntimeException("gRPC 서비스 통신 오류", e);
+		}
 	}
+
+
+
 }

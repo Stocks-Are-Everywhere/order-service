@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "com.onseju.orderservice.grpc";
+option java_outer_classname = "OrderValidationProto";
+
+// 서비스 정의
+service OrderValidationService {
+  rpc ValidateOrder (GrpcValidateRequest) returns (GrpcValidateResponse) {}
+}
+
+
+message GrpcValidateRequest {
+  string company_code = 1;
+  string type = 2;
+  string total_quantity = 3;
+  string price = 4;
+  int64 member_id = 5;
+}
+
+message GrpcValidateResponse {
+  int64 account_id = 1;
+  bool result = 2;
+  string message = 3;
+}

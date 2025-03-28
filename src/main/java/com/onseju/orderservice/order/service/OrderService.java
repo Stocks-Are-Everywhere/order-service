@@ -1,29 +1,28 @@
 package com.onseju.orderservice.order.service;
 
-import java.math.BigDecimal;
-
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.onseju.orderservice.company.domain.Company;
 import com.onseju.orderservice.company.service.repository.CompanyRepository;
-import com.onseju.orderservice.events.CreatedEvent;
+import com.onseju.orderservice.events.OrderCreatedEvent;
 import com.onseju.orderservice.events.MatchedEvent;
 import com.onseju.orderservice.events.OrderBookSyncedEvent;
-import com.onseju.orderservice.events.UpdateEvent;
-import com.onseju.orderservice.events.publisher.OrderEventPublisher;
+import com.onseju.orderservice.events.publisher.EventPublisher;
 import com.onseju.orderservice.order.client.UserServiceClient;
 import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.dto.AfterTradeOrderDto;
 import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
+import com.onseju.orderservice.order.dto.OrderValidationResponse;
+import com.onseju.orderservice.order.exception.OrderNotValidateException;
 import com.onseju.orderservice.order.exception.PriceOutOfRangeException;
 import com.onseju.orderservice.order.mapper.OrderMapper;
 import com.onseju.orderservice.order.service.repository.OrderRepository;
 import com.onseju.orderservice.order.service.validator.OrderValidator;
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -32,7 +31,8 @@ public class OrderService {
 
 	private final OrderRepository orderRepository;
 	private final CompanyRepository companyRepository;
-	private final OrderEventPublisher eventPublisher;
+	private final EventPublisher<OrderCreatedEvent> orderEventPublisher;
+	private final EventPublisher<MatchedEvent> matchedEventPublisher;
 	private final UserServiceClient userServiceClient;
 	private final OrderMapper orderMapper;
 
@@ -43,26 +43,16 @@ public class OrderService {
 		// 주문 유효성 검증
 		validateOrder(dto.price(), dto.companyCode());
 
-		// 사용자 유효성 검증
-		userServiceClient.validateAccountAndHoldings(dto);
+		// 계좌 및 보유 주식 검증(REST 요청)
+		Long accountId = getAccountIdFromUserService(dto);
 
 		// 주문 저장
-		final Order order = orderMapper.toEntity(dto, dto.accountId());
+		final Order order = orderMapper.toEntity(dto, accountId);
 		final Order savedOrder = orderRepository.save(order);
 
 		// 주문 생성 이벤트 발행
-		final CreatedEvent event = orderMapper.toEvent(savedOrder);
-		eventPublisher.publishOrderCreated(event);
-	}
-
-	/**
-	 * 주문 예약 수량 업데이트
-	 */
-	@Transactional
-	public void updateRemainingQuantity(final AfterTradeOrderDto dto) {
-		final Order order = orderRepository.getById(dto.orderId());
-		order.decreaseRemainingQuantity(dto.quantity());
-		orderRepository.save(order);
+		final OrderCreatedEvent event = orderMapper.toEvent(savedOrder);
+		orderEventPublisher.publishEvent(event);
 	}
 
 	/**
@@ -81,6 +71,29 @@ public class OrderService {
 		}
 	}
 
+	// 외부의 user-service와 rest 통신
+	private Long getAccountIdFromUserService(final BeforeTradeOrderDto dto) {
+		OrderValidationResponse clientsResponse = userServiceClient.validateOrder(dto);
+
+		// 검증 결과 확인
+		if (!clientsResponse.result()) {
+			throw new OrderNotValidateException();
+		}
+
+		return clientsResponse.accountId();
+	}
+
+
+	/**
+	 * 주문 예약 수량 업데이트
+	 */
+	@Transactional
+	public void updateRemainingQuantity(final AfterTradeOrderDto dto) {
+		final Order order = orderRepository.getById(dto.orderId());
+		order.decreaseRemainingQuantity(dto.quantity());
+		orderRepository.save(order);
+	}
+
 	/**
 	 * 주문장 업데이트 (매칭 엔진으로부터 수신)
 	 */
@@ -92,17 +105,6 @@ public class OrderService {
 	 * 매칭 후, 사용자 업데이트 이벤트 발행
 	 */
 	public void publishUserUpdateEvent(final MatchedEvent event) {
-		final UpdateEvent updateEvent = UpdateEvent.builder()
-				.companyCode(event.companyCode())
-				.buyOrderId(event.buyOrderId())
-				.buyAccountId(event.buyAccountId())
-				.sellOrderId(event.sellOrderId())
-				.sellAccountId(event.sellAccountId())
-				.quantity(event.quantity())
-				.price(event.price())
-				.tradeAt(event.tradeAt())
-				.build();
-
-		eventPublisher.publishUserUpdate(updateEvent);
+		matchedEventPublisher.publishEvent(event);
 	}
 }
