@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 
 import com.onseju.orderservice.company.domain.Company;
 
@@ -18,7 +17,4 @@ public interface CompanyJpaRepository extends JpaRepository<Company, Long> {
 	);
 
 	Optional<Company> findByIsuSrtCd(String isuSrtCd);
-
-	@Query("SELECT c.isuSrtCd FROM Company c")
-	List<String> findAllIsuSrtCd();
 }

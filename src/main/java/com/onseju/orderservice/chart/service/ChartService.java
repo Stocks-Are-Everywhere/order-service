@@ -8,6 +8,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -54,7 +55,7 @@ public class ChartService {
 	 */
 	public void initializeAllCompanyCandleData() {
 		try {
-			final List<String> allCompanyCodes = closingPriceService.getAllCompanyCode();
+			final Set<String> allCompanyCodes = closingPriceService.getAllCompanyCodeByInmemory();
 			if (allCompanyCodes.isEmpty()) {
 				return;
 			}

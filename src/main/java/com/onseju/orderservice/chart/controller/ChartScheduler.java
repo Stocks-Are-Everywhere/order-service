@@ -1,6 +1,6 @@
 package com.onseju.orderservice.chart.controller;
 
-import java.util.List;
+import java.util.Set;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -88,7 +88,7 @@ public class ChartScheduler {
 
 		try {
 			// 모든 종목 코드 가져오기
-			final List<String> allCompanyCodes = closingPriceService.getAllCompanyCode();
+			final Set<String> allCompanyCodes = closingPriceService.getAllCompanyCodeByInmemory();
 
 			if (allCompanyCodes.isEmpty()) {
 				log.warn("업데이트할 종목이 없습니다.");

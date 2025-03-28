@@ -1,13 +1,11 @@
 package com.onseju.orderservice.company.service;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Service;
-
-import com.onseju.orderservice.company.service.repository.CompanyRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ClosingPriceService {
 	private final Map<String, BigDecimal> closingPriceMap = new ConcurrentHashMap<>();
-	private final CompanyRepository companyRepository;
 
 	/**
 	 * 종가 조회
@@ -37,10 +34,10 @@ public class ClosingPriceService {
 	}
 
 	/**
-	 * 모든 종목 코드 가져오기
+	 * 인메모리에서 모든 종목 코드 가져오기
 	 */
-	public List<String> getAllCompanyCode() {
-		return companyRepository.findAllIsuSrtCd();
+	public Set<String> getAllCompanyCodeByInmemory() {
+		return closingPriceMap.keySet();
 	}
 
 	/**

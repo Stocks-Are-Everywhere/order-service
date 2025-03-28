@@ -34,12 +34,7 @@ public class CompanyRepositoryImpl implements CompanyRepository {
 	public List<Company> findAll() {
 		return companyJpaRepository.findAll();
 	}
-
-	@Override
-	public List<String> findAllIsuSrtCd() {
-		return companyJpaRepository.findAllIsuSrtCd();
-	}
-
+	
 	@Override
 	public void save(final Company company) {
 		companyJpaRepository.save(company);
