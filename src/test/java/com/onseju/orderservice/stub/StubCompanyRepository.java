@@ -28,12 +28,7 @@ public class StubCompanyRepository implements CompanyRepository {
 	public List<Company> findAll() {
 		return List.of(company);
 	}
-
-	@Override
-	public List<String> findAllIsuSrtCd() {
-		return List.of(company.getIsuSrtCd());
-	}
-
+	
 	@Override
 	public void save(Company company) {
 
