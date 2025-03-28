@@ -1,4 +1,4 @@
-package com.onseju.orderservice.tradehistory.controller;
+package com.onseju.orderservice.tradehistory.controller.response;
 
 import java.util.List;
 

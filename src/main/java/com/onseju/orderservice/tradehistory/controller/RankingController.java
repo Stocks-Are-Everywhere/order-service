@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.onseju.orderservice.tradehistory.controller.response.RankingResponse;
 import com.onseju.orderservice.tradehistory.dto.TotalTradeAmountDto;
 import com.onseju.orderservice.tradehistory.dto.TradeAvgPriceDto;
 import com.onseju.orderservice.tradehistory.dto.TradeCountDto;

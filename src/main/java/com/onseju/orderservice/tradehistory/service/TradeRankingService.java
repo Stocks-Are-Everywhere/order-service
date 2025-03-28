@@ -1,5 +1,8 @@
 package com.onseju.orderservice.tradehistory.service;
 
+import com.onseju.orderservice.company.domain.Company;
+import com.onseju.orderservice.company.exception.CompanyNotFound;
+import com.onseju.orderservice.company.service.repository.CompanyRepository;
 import com.onseju.orderservice.tradehistory.dto.TotalTradeAmountDto;
 import com.onseju.orderservice.tradehistory.dto.TradeAvgPriceDto;
 import com.onseju.orderservice.tradehistory.dto.TradeCountDto;
@@ -23,6 +26,7 @@ import java.util.stream.Collectors;
 public class TradeRankingService {
 
 	private final TradeHistoryRepository tradeHistoryRepository;
+	private final CompanyRepository companyRepository;  // 추가
 
 	private final List<TotalTradeAmountDto> totalTradeAmountCache = new ArrayList<>();
 	private final List<TradeAvgPriceDto> tradeAvgPriceCache = new ArrayList<>();
@@ -37,23 +41,45 @@ public class TradeRankingService {
 
 			List<TotalTradeAmountDto> totalAmountDtos = tradeHistoryRepository.findTotalTradeAmountByCompany(top10)
 				.stream()
-				.map(result -> new TotalTradeAmountDto((String) result[0],
-					result[1] instanceof Double ?
-						BigDecimal.valueOf((Double) result[1]) :
-						(BigDecimal) result[1]))
+				.map(result -> {
+					String companyCode = (String) result[0];
+					String companyName = getCompanyName(companyCode);
+					return new TotalTradeAmountDto(
+						companyCode,
+						companyName,
+						result[1] instanceof Double ?
+							BigDecimal.valueOf((Double) result[1]) :
+							(BigDecimal) result[1]
+					);
+				})
 				.collect(Collectors.toList());
 
 			List<TradeAvgPriceDto> avgPriceDtos = tradeHistoryRepository.findTradeAvgPriceByCompany(top10)
 				.stream()
-				.map(result -> new TradeAvgPriceDto((String) result[0],
-					result[1] instanceof Double ?
-						BigDecimal.valueOf((Double) result[1]) :
-						(BigDecimal) result[1]))
+				.map(result -> {
+					String companyCode = (String) result[0];
+					String companyName = getCompanyName(companyCode);
+					return new TradeAvgPriceDto(
+						companyCode,
+						companyName,
+						result[1] instanceof Double ?
+							BigDecimal.valueOf((Double) result[1]) :
+							(BigDecimal) result[1]
+					);
+				})
 				.collect(Collectors.toList());
 
 			List<TradeCountDto> countDtos = tradeHistoryRepository.findTradeCountByCompany(top10)
 				.stream()
-				.map(result -> new TradeCountDto((String) result[0], ((Number) result[1]).longValue()))
+				.map(result -> {
+					String companyCode = (String) result[0];
+					String companyName = getCompanyName(companyCode);
+					return new TradeCountDto(
+						companyCode,
+						companyName,
+						((Number) result[1]).longValue()
+					);
+				})
 				.collect(Collectors.toList());
 
 			updateCache(totalTradeAmountCache, totalAmountDtos);
@@ -64,6 +90,20 @@ public class TradeRankingService {
 				totalAmountDtos.size(), avgPriceDtos.size(), countDtos.size());
 		} catch (Exception e) {
 			log.error("거래 통계 캐시 갱신 중 오류 발생", e);
+		}
+	}
+
+	// 회사 코드로 회사명을 조회하는 메서드
+	private String getCompanyName(String companyCode) {
+		try {
+			Company company = companyRepository.findByIsuSrtCd(companyCode);
+			return company.getIsuNm(); // 회사명 필드명은 실제 Company 엔티티에 맞게 수정
+		} catch (CompanyNotFound e) {
+			log.warn("회사 코드 {}에 해당하는 회사를 찾을 수 없습니다.", companyCode);
+			return "Unknown"; // 회사를 찾을 수 없는 경우 기본값
+		} catch (Exception e) {
+			log.error("회사명 조회 중 오류 발생: {}", e.getMessage());
+			return "Error"; // 오류 발생 시 기본값
 		}
 	}
 
