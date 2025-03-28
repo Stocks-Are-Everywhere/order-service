@@ -44,12 +44,8 @@ public class OrderEventListener {
 		final TradeHistory tradeHistory = tradeHistoryMapper.toEntity(event);
 		tradeHistoryService.saveTradeHistory(tradeHistory);
 
-		// 메모리에 거래 내역 저장
-		chartService.storeTradeHistory(tradeHistory);
-
-		// 차트 업데이트
-		chartService.updateAllTimeFrameCandles(tradeHistory);
-		chartService.sendChartUpdates(tradeHistory);
+		// 메모리에 거래 내역 저장 및 차트 업데이트
+		chartService.processNewTrade(tradeHistory);
 
 		// 주문 내역에서 남은 양 차감
 		final AfterTradeOrderDto buyOrder =

@@ -1,5 +1,7 @@
 package com.onseju.orderservice.chart.controller;
 
+import java.util.List;
+
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Controller;
@@ -7,6 +9,7 @@ import org.springframework.stereotype.Controller;
 import com.onseju.orderservice.chart.domain.TimeFrame;
 import com.onseju.orderservice.chart.dto.ChartResponseDto;
 import com.onseju.orderservice.chart.service.ChartService;
+import com.onseju.orderservice.company.service.ClosingPriceService;
 import com.onseju.orderservice.events.listener.ApplicationReadyEventListener;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -21,20 +24,17 @@ public class ChartScheduler {
 
 	private final ChartService chartService;
 	private final SimpMessagingTemplate messagingTemplate;
-
-	// 기본 종목 코드
-	private static final String DEFAULT_COMPANY_CODE = "005930";
-	private static final String TOPIC_TEMPLATE = "/topic/candle/%s/%s";
-
-	// 서버 초기화 상태 검증 리스너
 	private final ApplicationReadyEventListener applicationReadyEventListener;
+	private final ClosingPriceService closingPriceService;
+
+	private static final String TOPIC_TEMPLATE = "/topic/candle/%s/%s";
 
 	/**
 	 * 15초봉 업데이트 (15초마다)
 	 */
 	@Scheduled(fixedRate = 15000)
 	public void sendCandleUpdates15Sec() {
-		sendCandleUpdates(DEFAULT_COMPANY_CODE, TimeFrame.SECONDS_15);
+		updateAllCompanies(TimeFrame.SECONDS_15);
 	}
 
 	/**
@@ -42,7 +42,7 @@ public class ChartScheduler {
 	 */
 	@Scheduled(fixedRate = 60000)
 	public void sendCandleUpdates1Min() {
-		sendCandleUpdates(DEFAULT_COMPANY_CODE, TimeFrame.MINUTE_1);
+		updateAllCompanies(TimeFrame.MINUTE_1);
 	}
 
 	/**
@@ -50,7 +50,7 @@ public class ChartScheduler {
 	 */
 	@Scheduled(fixedRate = 300000)
 	public void sendCandleUpdates5Min() {
-		sendCandleUpdates(DEFAULT_COMPANY_CODE, TimeFrame.MINUTE_5);
+		updateAllCompanies(TimeFrame.MINUTE_5);
 	}
 
 	/**
@@ -58,7 +58,7 @@ public class ChartScheduler {
 	 */
 	@Scheduled(fixedRate = 900000)
 	public void sendCandleUpdates15Min() {
-		sendCandleUpdates(DEFAULT_COMPANY_CODE, TimeFrame.MINUTE_15);
+		updateAllCompanies(TimeFrame.MINUTE_15);
 	}
 
 	/**
@@ -66,7 +66,7 @@ public class ChartScheduler {
 	 */
 	@Scheduled(fixedRate = 1800000)
 	public void sendCandleUpdates30Min() {
-		sendCandleUpdates(DEFAULT_COMPANY_CODE, TimeFrame.MINUTE_30);
+		updateAllCompanies(TimeFrame.MINUTE_30);
 	}
 
 	/**
@@ -74,25 +74,54 @@ public class ChartScheduler {
 	 */
 	@Scheduled(fixedRate = 3600000)
 	public void sendCandleUpdates1Hour() {
-		sendCandleUpdates(DEFAULT_COMPANY_CODE, TimeFrame.HOUR_1);
+		updateAllCompanies(TimeFrame.HOUR_1);
+	}
+
+	/**
+	 * 모든 종목에 대해 지정된 타임프레임의 캔들 업데이트 및 전송
+	 */
+	private void updateAllCompanies(final TimeFrame timeFrame) {
+		if (!applicationReadyEventListener.isInitialized()) {
+			log.warn("애플리케이션이 아직 초기화되지 않았습니다. 차트 스케줄러를 건너뜁니다.");
+			return;
+		}
+
+		try {
+			// 모든 종목 코드 가져오기
+			final List<String> allCompanyCodes = closingPriceService.getAllCompanyCode();
+
+			if (allCompanyCodes.isEmpty()) {
+				log.warn("업데이트할 종목이 없습니다.");
+				return;
+			}
+
+			log.debug("{}분봉 업데이트 시작: {} 종목", timeFrame.getTimeCode(), allCompanyCodes.size());
+
+			// 모든 종목에 대해 업데이트 및 전송
+			for (String companyCode : allCompanyCodes) {
+				sendCandleUpdates(companyCode, timeFrame);
+			}
+
+			log.debug("{}분봉 업데이트 완료", timeFrame.getTimeCode());
+		} catch (Exception e) {
+			log.error("{}분봉 전체 종목 업데이트 중 오류 발생", timeFrame.getTimeCode(), e);
+		}
 	}
 
 	/**
 	 * 지정된 종목 코드와 타임프레임에 대한 캔들 업데이트 수행 및 전송
 	 */
 	private void sendCandleUpdates(final String companyCode, final TimeFrame timeFrame) {
-		if (!applicationReadyEventListener.isInitialized()) {
-			log.warn("애플리케이션이 아직 초기화되지 않았습니다. 차트 스케줄러를 건너뜁니다.");
-			return;
+		try {
+			// 종목의 캔들 데이터 업데이트
+			chartService.updateCandles(companyCode);
+
+			// 업데이트된 캔들 데이터 조회 및 전송
+			final ChartResponseDto candleData = chartService.getChartHistory(companyCode, timeFrame.getTimeCode());
+			final String destination = String.format(TOPIC_TEMPLATE, companyCode, timeFrame.getTimeCode());
+			messagingTemplate.convertAndSend(destination, candleData);
+		} catch (Exception e) {
+			log.error("캔들 업데이트 중 오류 발생: {}분봉, 종목코드={}", timeFrame.getTimeCode(), companyCode, e);
 		}
-
-		// 캔들 데이터 업데이트
-		chartService.updateCandles(companyCode);
-
-		// 업데이트된 캔들 데이터 조회 및 전송
-		final ChartResponseDto candleDate = chartService.getChartHistory(companyCode, timeFrame.getTimeCode());
-		final String destination = String.format(TOPIC_TEMPLATE, companyCode, timeFrame.getTimeCode());
-		messagingTemplate.convertAndSend(destination, candleDate);
 	}
-
 }
