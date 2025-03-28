@@ -10,8 +10,9 @@ import com.onseju.orderservice.order.mapper.OrderMapper;
 import com.onseju.orderservice.order.service.OrderService;
 import com.onseju.orderservice.order.service.repository.OrderRepository;
 import com.onseju.orderservice.tradehistory.mapper.TradeHistoryMapper;
+import com.onseju.orderservice.tradehistory.repository.TradeHistoryJpaRepository;
 import com.onseju.orderservice.tradehistory.service.TradeHistoryService;
-import com.onseju.orderservice.tradehistory.service.repository.TradeHistoryRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +47,7 @@ class MatchedEventListenerIntegrationTest {
     ChartService chartService;
 
 	@Autowired
-	private TradeHistoryRepository tradeHistoryRepository;
+	private TradeHistoryJpaRepository tradeHistoryJpaRepository;
 
     @Autowired
 	private OrderRepository orderRepository;

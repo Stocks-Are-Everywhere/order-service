@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -131,6 +132,7 @@ public class ChartService {
 	private List<TradeHistory> fetchRecentTradesForCompany(final String companyCode) {
 		return tradeHistoryRepository.findRecentTradesByCompanyCode(companyCode, MAX_TRADE_HISTORY);
 	}
+
 
 	/**
 	 * 거래 내역 시간 기준 내림차순 정렬 (최신순)
