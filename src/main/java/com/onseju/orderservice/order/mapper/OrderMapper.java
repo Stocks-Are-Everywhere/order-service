@@ -24,13 +24,14 @@ public class OrderMapper {
 				.status(OrderStatus.ACTIVE)
 				.price(dto.price())
 				.accountId(accountId)
-				.timestamp(Instant.now().getEpochSecond())
+				.timestamp(Instant.now().toEpochMilli())
 				.build();
 	}
 
 	public OrderCreatedEvent toEvent(final Order order) {
 		return OrderCreatedEvent.builder()
-				.id(order.getId())
+				.id(UUID.randomUUID())
+				.orderId(order.getId())
 				.companyCode(order.getCompanyCode())
 				.type(order.getType())
 				.status(order.getStatus())

@@ -34,10 +34,15 @@ public class CompanyRepositoryImpl implements CompanyRepository {
 	public List<Company> findAll() {
 		return companyJpaRepository.findAll();
 	}
-
+	
 	@Override
 	public void save(final Company company) {
 		companyJpaRepository.save(company);
+	}
+
+	@Override
+	public void saveAll(final List<Company> companies) {
+		companyJpaRepository.saveAll(companies);
 	}
 
 	@Override

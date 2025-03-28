@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -20,6 +21,7 @@ class TradeHistoryMapperTest {
 	void toEntity() {
 		// given
 		MatchedEvent event = new MatchedEvent(
+				UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
 				"005930",
 				1L,
 				1L,

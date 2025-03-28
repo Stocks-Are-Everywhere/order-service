@@ -1,5 +1,18 @@
 package com.onseju.orderservice.listener;
 
+import static org.assertj.core.api.Assertions.*;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.onseju.orderservice.chart.service.ChartService;
 import com.onseju.orderservice.events.MatchedEvent;
 import com.onseju.orderservice.events.listener.OrderEventListener;
@@ -12,7 +25,6 @@ import com.onseju.orderservice.order.service.repository.OrderRepository;
 import com.onseju.orderservice.tradehistory.mapper.TradeHistoryMapper;
 import com.onseju.orderservice.tradehistory.repository.TradeHistoryJpaRepository;
 import com.onseju.orderservice.tradehistory.service.TradeHistoryService;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,35 +37,35 @@ import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest
-class MatchedEventListenerIntegrationTest {
+
+@SpringBootTest()
+class TradeEventListenerTest {
 
 	@Autowired
 	private OrderEventListener orderEventListener;
 
-    @Autowired
-    TradeHistoryService tradeHistoryService;
+	@Autowired
+	TradeHistoryService tradeHistoryService;
 
-    @Autowired
-    TradeHistoryMapper tradeHistoryMapper;
+	@Autowired
+	TradeHistoryMapper tradeHistoryMapper;
 
-    @Autowired
-    OrderService orderService;
+	@Autowired
+	OrderService orderService;
 
-    @Autowired
-    OrderMapper orderMapper;
+	@Autowired
+	OrderMapper orderMapper;
 
-    @Autowired
-    ChartService chartService;
+	@Autowired
+	ChartService chartService;
 
 	@Autowired
 	private TradeHistoryJpaRepository tradeHistoryJpaRepository;
 
-    @Autowired
+	@Autowired
 	private OrderRepository orderRepository;
 
 	private MatchedEvent matchedEvent;
-
 
 	@BeforeEach
 	void setUp() {
@@ -65,7 +77,7 @@ class MatchedEventListenerIntegrationTest {
 				.remainingQuantity(new BigDecimal("100"))
 				.status(OrderStatus.ACTIVE)
 				.price(new BigDecimal("50000"))
-				.timestamp(Instant.now().getEpochSecond())
+				.timestamp(Instant.now().toEpochMilli())
 				.createdDateTime(LocalDateTime.now())
 				.updatedDateTime(LocalDateTime.now())
 				.accountId(1L)
@@ -77,7 +89,7 @@ class MatchedEventListenerIntegrationTest {
 				.remainingQuantity(new BigDecimal("100"))
 				.status(OrderStatus.ACTIVE)
 				.price(new BigDecimal("50000"))
-				.timestamp(Instant.now().getEpochSecond())
+				.timestamp(Instant.now().toEpochMilli())
 				.createdDateTime(LocalDateTime.now())
 				.updatedDateTime(LocalDateTime.now())
 				.accountId(2L)
@@ -88,14 +100,15 @@ class MatchedEventListenerIntegrationTest {
 		orderRepository.save(sellOrder);
 
 		matchedEvent = new MatchedEvent(
+				UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
 				"005930",
 				1L,
-                1L,
+				1L,
 				2L,
-                2L,
+				2L,
 				BigDecimal.valueOf(100),
 				BigDecimal.valueOf(1000),
-				Instant.now().getEpochSecond()
+				Instant.now().toEpochMilli()
 		);
 	}
 
@@ -103,7 +116,7 @@ class MatchedEventListenerIntegrationTest {
 	@Transactional
 	void testCreateTradeHistoryEvent() {
 		// tradeEventListener 호출
-        orderEventListener.handleOrderMatched(matchedEvent);
+		orderEventListener.handleOrderMatched(matchedEvent);
 
 		// 2. 차감 내역 조회
 		Order updatedBuyOrder = orderRepository.getById(1L);

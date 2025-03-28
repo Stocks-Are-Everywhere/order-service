@@ -1,13 +1,9 @@
 spring:
-
   datasource:
     url: jdbc:h2:mem:testdb
     driver-class-name: org.h2.Driver
     username: sa
     password:
-
-  config:
-    import: classpath:/env.properties
 
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
@@ -16,16 +12,16 @@ spring:
     show-sql: false
 
   rabbitmq:
-    host: ${RABBITMQ_HOST}
-    port: ${RABBITMQ_PORT}
-    username: ${RABBITMQ_USERNAME}
-    password: ${RABBITMQ_PASSWORD}
+    host: localhost
+    port: 5672
+    username: test
+    password: test
     publisher-confirm-type: correlated
     publisher-returns: true
 
 jwt:
   secret:
-    key: ${JWT_SECRET_KEY}
+    key: "dGVzdC1vbnNlamUtanRzLXNlY3JldC1rZXktMTIzNDU2Nzg5MA=="
 
 user-service:
-  url: ${USER_SERVICE_BASE_URL}
+  url: "http://localhost:8080"
