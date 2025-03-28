@@ -14,7 +14,7 @@ class OrderTest {
 	@Test
 	@DisplayName("주문 생성 및 조회 테스트")
 	void testOrderCreationAndRetrieval() {
-		Long now = Instant.now().getEpochSecond();
+		Long now = Instant.now().toEpochMilli();
 		Order order = Order.builder()
 				.companyCode("005930")
 				.type(Type.LIMIT_BUY)

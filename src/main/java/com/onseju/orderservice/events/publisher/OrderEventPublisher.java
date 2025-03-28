@@ -29,9 +29,8 @@ public class OrderEventPublisher extends AbstractEventPublisher<OrderCreatedEven
         try {
             publishOrderCreatedEventToOrderService(event);
             publishOrderCreatedEventToMatchingEngine(event);
-            log.info("주문 이벤트 발행 완료. orderId: {}", event.id());
         } catch (Exception ex) {
-            log.error("주문 이벤트 발행 중 오류 발생. orderId: {}", event.id(), ex);
+            log.error("주문 이벤트 발행 중 오류 발생. event id: {}", event.id(), ex);
             throw new OrderEventPublisherFailException();
         }
     }

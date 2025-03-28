@@ -263,7 +263,7 @@ public class ChartService {
 			return;
 		}
 
-		final Long now = Instant.now().getEpochSecond();
+		final Long now = Instant.now().toEpochMilli();
 		final Long lastCandleTime = candles.get(candles.size() - 1).time();
 		final Long timeFrameSeconds = timeFrame.getSeconds();
 		final Double lastPrice = candles.get(candles.size() - 1).close();
@@ -316,7 +316,7 @@ public class ChartService {
 		// 시간 값이 유효하지 않은 경우 로그 남기고 현재 시간으로 대체
 		if (time == null || time <= 0) {
 			log.warn("유효하지 않은 candle 시간값, 현재 시간으로 대체합니다.");
-			time = Instant.now().getEpochSecond();
+			time = Instant.now().toEpochMilli();
 		}
 
 		// 가격 유효성 검증 및 기본값 설정
@@ -420,7 +420,7 @@ public class ChartService {
 	 * 현재 시간에 해당하는 캔들 시간 계산
 	 */
 	private Long calculateCurrentCandleTime(final TimeFrame timeFrame) {
-		final Long now = Instant.now().getEpochSecond();
+		final Long now = Instant.now().toEpochMilli();
 		return calculateCandleTime(now, timeFrame.getSeconds());
 	}
 
@@ -920,7 +920,7 @@ public class ChartService {
 	 * 기본 캔들 생성
 	 */
 	private CandleDto createDefaultCandle(final TimeFrame timeFrame) {
-		final Long now = Instant.now().getEpochSecond();
+		final Long now = Instant.now().toEpochMilli();
 		final Long timeFrameSeconds = timeFrame.getSeconds();
 		final Long currentCandleTime = calculateCandleTime(now, timeFrameSeconds);
 

@@ -35,7 +35,7 @@ class TradeHistoryServiceTest {
 				.buyOrderId(2L)
 				.price(new BigDecimal(100))
 				.quantity(new BigDecimal(100))
-				.tradeTime(Instant.now().getEpochSecond())
+				.tradeTime(Instant.now().toEpochMilli())
 				.build();
 
 		// when
