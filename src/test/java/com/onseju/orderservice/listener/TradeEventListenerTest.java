@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,34 +13,50 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.onseju.orderservice.chart.service.ChartService;
 import com.onseju.orderservice.events.MatchedEvent;
-import com.onseju.orderservice.events.listener.MatchedEventListener;
-import com.onseju.orderservice.events.mapper.EventMapper;
-import com.onseju.orderservice.holding.service.HoldingsRepository;
+import com.onseju.orderservice.events.listener.OrderEventListener;
 import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.domain.OrderStatus;
 import com.onseju.orderservice.order.domain.Type;
+import com.onseju.orderservice.order.mapper.OrderMapper;
+import com.onseju.orderservice.order.service.OrderService;
 import com.onseju.orderservice.order.service.repository.OrderRepository;
+import com.onseju.orderservice.tradehistory.mapper.TradeHistoryMapper;
+import com.onseju.orderservice.tradehistory.service.TradeHistoryService;
 import com.onseju.orderservice.tradehistory.service.repository.TradeHistoryRepository;
 
-@SpringBootTest
-class MatchedEventListenerIntegrationTest {
+@SpringBootTest()
+class TradeEventListenerTest {
 
 	@Autowired
-	private MatchedEventListener matchedEventListener;
+	private OrderEventListener orderEventListener;
+
+	@Autowired
+	TradeHistoryService tradeHistoryService;
+
+	@Autowired
+	TradeHistoryMapper tradeHistoryMapper;
+
+	@Autowired
+	OrderService orderService;
+
+	@Autowired
+	OrderMapper orderMapper;
+
+	@Autowired
+	ChartService chartService;
+
 	@Autowired
 	private TradeHistoryRepository tradeHistoryRepository;
+
 	@Autowired
 	private OrderRepository orderRepository;
-	@Autowired
-	private EventMapper eventMapper;
 
 	private MatchedEvent matchedEvent;
-	@Autowired
-	private HoldingsRepository holdingsRepository;
 
 	@BeforeEach
-	void setUp() throws InterruptedException {
+	void setUp() {
 		// 테스트를 위한 실제 데이터 생성
 		Order buyOrder = Order.builder()
 				.companyCode("005930")
@@ -48,7 +65,7 @@ class MatchedEventListenerIntegrationTest {
 				.remainingQuantity(new BigDecimal("100"))
 				.status(OrderStatus.ACTIVE)
 				.price(new BigDecimal("50000"))
-				.timestamp(Instant.now().getEpochSecond())
+				.timestamp(Instant.now().toEpochMilli())
 				.createdDateTime(LocalDateTime.now())
 				.updatedDateTime(LocalDateTime.now())
 				.accountId(1L)
@@ -60,7 +77,7 @@ class MatchedEventListenerIntegrationTest {
 				.remainingQuantity(new BigDecimal("100"))
 				.status(OrderStatus.ACTIVE)
 				.price(new BigDecimal("50000"))
-				.timestamp(Instant.now().getEpochSecond())
+				.timestamp(Instant.now().toEpochMilli())
 				.createdDateTime(LocalDateTime.now())
 				.updatedDateTime(LocalDateTime.now())
 				.accountId(2L)
@@ -70,37 +87,16 @@ class MatchedEventListenerIntegrationTest {
 		orderRepository.save(buyOrder);
 		orderRepository.save(sellOrder);
 
-		//        // 보유 주식 내역 저장
-		//        holdingsRepository.save(
-		//                Holdings.builder()
-		//                        .companyCode("005930")
-		//                        .quantity(new BigDecimal(100))
-		//                        .reservedQuantity(BigDecimal.ZERO)
-		//                        .averagePrice(new BigDecimal(1000))
-		//                        .totalPurchasePrice(new BigDecimal(100000))
-		//                        .accountId(1L)
-		//                        .build()
-		//        );
-		//
-		//        holdingsRepository.save(
-		//                Holdings.builder()
-		//                        .companyCode("005930")
-		//                        .quantity(new BigDecimal(100))
-		//                        .reservedQuantity(BigDecimal.ZERO)
-		//                        .averagePrice(new BigDecimal(1000))
-		//                        .totalPurchasePrice(new BigDecimal(100000))
-		//                        .accountId(2L)
-		//                        .build()
-		//        );
-		Thread.sleep(1000);
-		// TradeEvent 객체 준비
 		matchedEvent = new MatchedEvent(
+				UUID.fromString("f47ac10b-58cc-4372-a567-0e02b2c3d479"),
 				"005930",
 				1L,
+				1L,
+				2L,
 				2L,
 				BigDecimal.valueOf(100),
 				BigDecimal.valueOf(1000),
-				Instant.now().getEpochSecond()
+				Instant.now().toEpochMilli()
 		);
 	}
 
@@ -108,7 +104,7 @@ class MatchedEventListenerIntegrationTest {
 	@Transactional
 	void testCreateTradeHistoryEvent() {
 		// tradeEventListener 호출
-		matchedEventListener.createTradeHistoryEvent(matchedEvent);
+		orderEventListener.handleOrderMatched(matchedEvent);
 
 		// 2. 차감 내역 조회
 		Order updatedBuyOrder = orderRepository.getById(1L);

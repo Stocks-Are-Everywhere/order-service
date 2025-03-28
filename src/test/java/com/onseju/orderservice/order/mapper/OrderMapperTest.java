@@ -1,17 +1,14 @@
 package com.onseju.orderservice.order.mapper;
 
-import static org.assertj.core.api.Assertions.*;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-
+import com.onseju.orderservice.order.domain.Order;
+import com.onseju.orderservice.order.domain.Type;
+import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.onseju.orderservice.events.mapper.OrderMapper;
-import com.onseju.orderservice.order.domain.Order;
-import com.onseju.orderservice.order.domain.Type;
-import com.onseju.orderservice.order.dto.CreateOrderDto;
+import java.math.BigDecimal;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 class OrderMapperTest {
 
@@ -22,11 +19,11 @@ class OrderMapperTest {
 	void toEntity() {
 		// given
 		String companyCode = "005930";
-		CreateOrderDto createOrderParams = new CreateOrderDto("005930", Type.LIMIT_BUY, new BigDecimal(100),
-				new BigDecimal(1000), LocalDateTime.now(), 1L);
+		BeforeTradeOrderDto beforeTradeOrderDto = new BeforeTradeOrderDto("005930", "LIMIT_BUY", new BigDecimal(100),
+			new BigDecimal(1000), 1L);
 
 		// when
-		Order order = orderMapper.toEntity(createOrderParams, 1L);
+		Order order = orderMapper.toEntity(beforeTradeOrderDto, 1L);
 
 		// then
 		assertThat(order).isNotNull();
