@@ -1,7 +1,9 @@
 package com.onseju.orderservice.tradehistory.service;
 
+import com.onseju.orderservice.fake.FakeOrderRepository;
 import com.onseju.orderservice.fake.FakeTradeHistoryRepository;
 import com.onseju.orderservice.tradehistory.domain.TradeHistory;
+import com.onseju.orderservice.tradehistory.mapper.TradeHistoryMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -15,11 +17,14 @@ class TradeHistoryServiceTest {
 
 	private FakeTradeHistoryRepository tradeHistoryRepository;
 	private TradeHistoryService tradeHistoryService;
-
+	TradeHistoryMapper tradeHistoryMapper;
+	FakeOrderRepository orderRepository;
 	@BeforeEach
 	void setUp() {
 		tradeHistoryRepository = new FakeTradeHistoryRepository();
-		tradeHistoryService = new TradeHistoryService(tradeHistoryRepository);
+		tradeHistoryMapper = new TradeHistoryMapper();
+		orderRepository = new FakeOrderRepository();
+		tradeHistoryService = new TradeHistoryService(tradeHistoryRepository, orderRepository, tradeHistoryMapper);
 	}
 
 	@Test

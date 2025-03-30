@@ -100,6 +100,16 @@ public class FakeTradeHistoryJpaRepository implements TradeHistoryJpaRepository 
 			.collect(Collectors.toList());
 	}
 
+	@Override
+	public List<TradeHistory> findBySellOrderId(Long orderId) {
+		return List.of();
+	}
+
+	@Override
+	public List<TradeHistory> findByBuyOrderId(Long orderId) {
+		return List.of();
+	}
+
 	// 이하 JpaRepository의 나머지 메서드 구현
 
 	@Override

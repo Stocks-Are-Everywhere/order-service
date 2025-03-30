@@ -1,16 +1,18 @@
 package com.onseju.orderservice.tradehistory.dto;
 
+import com.onseju.orderservice.order.domain.Type;
 import lombok.Builder;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Builder
 public record TradeHistoryResponse(
+		Long orderId,
 		String companyCode,
-		Long sellOrderId,
-		Long buyOrderId,
-		BigDecimal quantity,
+		Type type,
 		BigDecimal price,
-		Long tradeTime
+		BigDecimal quantity,
+		LocalDateTime createdAt
 ) {
 }

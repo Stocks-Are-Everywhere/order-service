@@ -1,8 +1,9 @@
 package com.onseju.orderservice.global.config;
 
-import java.util.Arrays;
-import java.util.List;
-
+import com.onseju.orderservice.global.jwt.JwtUtil;
+import com.onseju.orderservice.global.security.JwtAuthorizationFilter;
+import com.onseju.orderservice.global.security.UserDetailsServiceImpl;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,11 +21,8 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import com.onseju.orderservice.global.jwt.JwtUtil;
-import com.onseju.orderservice.global.security.JwtAuthorizationFilter;
-import com.onseju.orderservice.global.security.UserDetailsServiceImpl;
-
-import lombok.RequiredArgsConstructor;
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 @RequiredArgsConstructor
@@ -53,6 +51,7 @@ public class WebSecurityConfig implements WebMvcConfigurer {
 		registry.addMapping("/**")
 				.allowedOrigins(
 						"http://localhost:8080",
+						"http://localhost:8081",
 						"http://localhost:3000",
 						"https://accounts.google.com"
 				)
@@ -67,6 +66,7 @@ public class WebSecurityConfig implements WebMvcConfigurer {
 		CorsConfiguration configuration = new CorsConfiguration();
 		configuration.setAllowedOrigins(Arrays.asList(
 				"http://localhost:8080",
+				"http://localhost:8081",
 				"http://localhost:3000",
 				"https://accounts.google.com"
 		));

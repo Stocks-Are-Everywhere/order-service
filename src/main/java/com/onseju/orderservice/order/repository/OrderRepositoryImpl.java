@@ -7,6 +7,7 @@ import com.onseju.orderservice.order.service.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 
 @Component
@@ -30,5 +31,10 @@ public class OrderRepositoryImpl implements OrderRepository {
 		return orderJpaRepository
 				.findById(id)
 				.orElseThrow(OrderNotFoundException::new);
+	}
+
+	@Override
+	public List<Order> findByMemberId(Long memberId) {
+		return orderJpaRepository.findByAccountId(memberId);
 	}
 }

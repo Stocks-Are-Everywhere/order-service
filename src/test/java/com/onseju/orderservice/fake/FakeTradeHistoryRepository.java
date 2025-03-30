@@ -1,5 +1,6 @@
 package com.onseju.orderservice.fake;
 
+import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.tradehistory.domain.TradeHistory;
 import com.onseju.orderservice.tradehistory.service.repository.TradeHistoryRepository;
 import org.springframework.data.domain.Pageable;
@@ -54,6 +55,11 @@ public class FakeTradeHistoryRepository implements TradeHistoryRepository {
 	public List<Object[]> findTradeCountByCompany(Pageable pageable) {
 		// 테스트에 필요하지 않은 메서드는 빈 리스트 반환
 		return new ArrayList<>();
+	}
+
+	@Override
+	public List<TradeHistory> findByOrderId(Order order) {
+		return List.of();
 	}
 
 	// 테스트에 필요한 추가 메서드
