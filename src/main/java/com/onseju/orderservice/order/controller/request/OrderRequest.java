@@ -11,6 +11,6 @@ public record OrderRequest(
 		String companyCode,
 		Type type,
 		BigDecimal totalQuantity,
-		BigDecimal price,
+		BigDecimal price
 ) {
 }

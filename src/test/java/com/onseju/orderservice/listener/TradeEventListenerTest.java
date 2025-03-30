@@ -80,7 +80,6 @@ class TradeEventListenerTest {
 				.timestamp(Instant.now().toEpochMilli())
 				.createdDateTime(LocalDateTime.now())
 				.updatedDateTime(LocalDateTime.now())
-				.accountId(1L)
 				.build();
 		Order sellOrder = Order.builder()
 				.companyCode("005930")
@@ -92,7 +91,6 @@ class TradeEventListenerTest {
 				.timestamp(Instant.now().toEpochMilli())
 				.createdDateTime(LocalDateTime.now())
 				.updatedDateTime(LocalDateTime.now())
-				.accountId(2L)
 				.build();
 
 		// 해당 주문들을 데이터베이스에 저장
