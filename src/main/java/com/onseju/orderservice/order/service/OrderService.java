@@ -6,7 +6,10 @@ import com.onseju.orderservice.events.OrderCreatedEvent;
 import com.onseju.orderservice.events.MatchedEvent;
 import com.onseju.orderservice.events.OrderBookSyncedEvent;
 import com.onseju.orderservice.events.publisher.EventPublisher;
+import com.onseju.orderservice.global.response.ApiResponse;
+import com.onseju.orderservice.global.utils.TsidGenerator;
 import com.onseju.orderservice.order.client.UserServiceClient;
+import com.onseju.orderservice.order.controller.resposne.OrderResponse;
 import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.dto.AfterTradeOrderDto;
 import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
@@ -18,6 +21,8 @@ import com.onseju.orderservice.order.service.repository.OrderRepository;
 import com.onseju.orderservice.order.service.validator.OrderValidator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,24 +40,36 @@ public class OrderService {
 	private final EventPublisher<MatchedEvent> matchedEventPublisher;
 	private final UserServiceClient userServiceClient;
 	private final OrderMapper orderMapper;
+	private final TsidGenerator tsidGenerator;
 
 	private final SimpMessagingTemplate messagingTemplate;
 
 	@Transactional
-	public void placeOrder(final BeforeTradeOrderDto dto) {
+	public ApiResponse<OrderResponse> placeOrder(final BeforeTradeOrderDto dto) {
 		// 주문 유효성 검증
 		validateOrder(dto.price(), dto.companyCode());
 
 		// 계좌 및 보유 주식 검증(REST 요청)
 		Long accountId = getAccountIdFromUserService(dto);
 
-		// 주문 저장
-		final Order order = orderMapper.toEntity(dto, accountId);
-		final Order savedOrder = orderRepository.save(order);
-
 		// 주문 생성 이벤트 발행
-		final OrderCreatedEvent event = orderMapper.toEvent(savedOrder);
+		final Long orderId = tsidGenerator.nextId();
+		final Order order = orderMapper.toEntity(orderId, dto, accountId);
+		final OrderCreatedEvent event = orderMapper.toEvent(order);
 		orderEventPublisher.publishEvent(event);
+
+		OrderResponse orderResponse = OrderResponse.builder()
+				.id(order.getId())
+				.companyCode(order.getCompanyCode())
+				.type(order.getType())
+				.totalQuantity(order.getTotalQuantity())
+				.price(order.getPrice())
+				.build();
+
+		return new ApiResponse<>(
+				"주문 접수 성공",
+				orderResponse,
+				HttpStatus.OK.value());
 	}
 
 	/**
@@ -106,5 +123,10 @@ public class OrderService {
 	 */
 	public void publishUserUpdateEvent(final MatchedEvent event) {
 		matchedEventPublisher.publishEvent(event);
+	}
+
+	@Transactional
+	public void saveOrder(final Order order){
+		orderRepository.save(order);
 	}
 }
