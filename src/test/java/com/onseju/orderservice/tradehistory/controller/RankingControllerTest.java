@@ -49,20 +49,20 @@ public class RankingControllerTest {
 
 	@BeforeEach
 	void setUp() {
-		// 테스트 데이터 설정
+		// 테스트 데이터 설정 - companyName 필드 추가
 		totalTradeAmounts = Arrays.asList(
-			new TotalTradeAmountDto("COMP1", new BigDecimal("1000.00")),
-			new TotalTradeAmountDto("COMP2", new BigDecimal("800.00"))
+			new TotalTradeAmountDto("COMP1", "회사1", new BigDecimal("1000.00")),
+			new TotalTradeAmountDto("COMP2", "회사2", new BigDecimal("800.00"))
 		);
 
 		tradeAvgPrices = Arrays.asList(
-			new TradeAvgPriceDto("COMP3", new BigDecimal("50.00")),
-			new TradeAvgPriceDto("COMP4", new BigDecimal("45.00"))
+			new TradeAvgPriceDto("COMP3", "회사3", new BigDecimal("50.00")),
+			new TradeAvgPriceDto("COMP4", "회사4", new BigDecimal("45.00"))
 		);
 
 		tradeCounts = Arrays.asList(
-			new TradeCountDto("COMP5", 100L),
-			new TradeCountDto("COMP6", 80L)
+			new TradeCountDto("COMP5", "회사5", 100L),
+			new TradeCountDto("COMP6", "회사6", 80L)
 		);
 	}
 
@@ -79,10 +79,13 @@ public class RankingControllerTest {
 				.contentType(MediaType.APPLICATION_JSON))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.totalTradeAmounts[0].companyCode").value("COMP1"))
+			.andExpect(jsonPath("$.totalTradeAmounts[0].companyName").value("회사1"))
 			.andExpect(jsonPath("$.totalTradeAmounts[0].totalAmount").value(1000.00))
 			.andExpect(jsonPath("$.tradeAvgPrices[0].companyCode").value("COMP3"))
+			.andExpect(jsonPath("$.tradeAvgPrices[0].companyName").value("회사3"))
 			.andExpect(jsonPath("$.tradeAvgPrices[0].avgPrice").value(50.00))
 			.andExpect(jsonPath("$.tradeCounts[0].companyCode").value("COMP5"))
+			.andExpect(jsonPath("$.tradeCounts[0].companyName").value("회사5"))
 			.andExpect(jsonPath("$.tradeCounts[0].count").value(100));
 
 		// 캐시가 채워져 있으므로 refreshCache는 호출되지 않아야 함
@@ -104,8 +107,11 @@ public class RankingControllerTest {
 				.contentType(MediaType.APPLICATION_JSON))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.totalTradeAmounts[0].companyCode").value("COMP1"))
+			.andExpect(jsonPath("$.totalTradeAmounts[0].companyName").value("회사1"))
 			.andExpect(jsonPath("$.tradeAvgPrices[0].companyCode").value("COMP3"))
-			.andExpect(jsonPath("$.tradeCounts[0].companyCode").value("COMP5"));
+			.andExpect(jsonPath("$.tradeAvgPrices[0].companyName").value("회사3"))
+			.andExpect(jsonPath("$.tradeCounts[0].companyCode").value("COMP5"))
+			.andExpect(jsonPath("$.tradeCounts[0].companyName").value("회사5"));
 
 		// 캐시가 비어있으므로 refreshCache가 호출되어야 함
 		verify(rankingService, times(1)).refreshCache();
@@ -128,8 +134,11 @@ public class RankingControllerTest {
 				.contentType(MediaType.APPLICATION_JSON))
 			.andExpect(status().isOk())
 			.andExpect(jsonPath("$.totalTradeAmounts[0].companyCode").value("COMP1"))
+			.andExpect(jsonPath("$.totalTradeAmounts[0].companyName").value("회사1"))
 			.andExpect(jsonPath("$.tradeAvgPrices[0].companyCode").value("COMP3"))
-			.andExpect(jsonPath("$.tradeCounts[0].companyCode").value("COMP5"));
+			.andExpect(jsonPath("$.tradeAvgPrices[0].companyName").value("회사3"))
+			.andExpect(jsonPath("$.tradeCounts[0].companyCode").value("COMP5"))
+			.andExpect(jsonPath("$.tradeCounts[0].companyName").value("회사5"));
 
 		// 모든 캐시가 비어있으므로 refreshCache가 호출되어야 함
 		verify(rankingService, times(1)).refreshCache();
