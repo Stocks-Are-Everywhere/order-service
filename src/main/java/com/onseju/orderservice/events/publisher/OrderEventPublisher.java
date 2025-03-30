@@ -46,7 +46,7 @@ public class OrderEventPublisher extends AbstractEventPublisher<OrderCreatedEven
 
     private void publishOrderCreatedEventToMatchingEngine(OrderCreatedEvent event) {
         sendMessage(
-            RabbitMQConfig.ONSEJU_EXCHANGE,
+            RabbitMQConfig.ONSEJU_MATCHING_EXCHANGE,
             RabbitMQConfig.MATCHING_REQUEST_KEY,
             event,
             "matching-" + event.id()
