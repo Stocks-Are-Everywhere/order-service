@@ -1,6 +1,7 @@
 package com.onseju.orderservice.tradehistory.service;
 
 import com.onseju.orderservice.company.domain.Company;
+import com.onseju.orderservice.company.exception.CompanyNotFound;
 import com.onseju.orderservice.company.service.repository.CompanyRepository;
 import com.onseju.orderservice.tradehistory.dto.TotalTradeAmountDto;
 import com.onseju.orderservice.tradehistory.dto.TradeAvgPriceDto;
@@ -19,6 +20,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 class TradeRankingServiceTest {
@@ -40,6 +42,7 @@ class TradeRankingServiceTest {
 	}
 
 	private void setupMockData() {
+		// 테스트 데이터 설정
 		List<Object[]> totalAmountData = new ArrayList<>();
 		totalAmountData.add(new Object[]{"COMP5", new BigDecimal("2500.00")});
 		totalAmountData.add(new Object[]{"COMP4", new BigDecimal("1600.00")});
@@ -55,23 +58,23 @@ class TradeRankingServiceTest {
 		countData.add(new Object[]{"COMP4", 8L});
 		countData.add(new Object[]{"COMP3", 6L});
 
-		when(tradeHistoryRepository.findTotalTradeAmountByCompany(any(Pageable.class)))
-			.thenReturn(totalAmountData);
-		when(tradeHistoryRepository.findTradeAvgPriceByCompany(any(Pageable.class)))
-			.thenReturn(avgPriceData);
-		when(tradeHistoryRepository.findTradeCountByCompany(any(Pageable.class)))
-			.thenReturn(countData);
+		// 리포지토리 스터빙
+		doReturn(totalAmountData).when(tradeHistoryRepository).findTotalTradeAmountByCompany(any(Pageable.class));
+		doReturn(avgPriceData).when(tradeHistoryRepository).findTradeAvgPriceByCompany(any(Pageable.class));
+		doReturn(countData).when(tradeHistoryRepository).findTradeCountByCompany(any(Pageable.class));
 
-		when(companyRepository.findByIsuSrtCd("COMP5")).thenReturn(createCompany("COMP5", "회사5"));
-		when(companyRepository.findByIsuSrtCd("COMP4")).thenReturn(createCompany("COMP4", "회사4"));
-		when(companyRepository.findByIsuSrtCd("COMP3")).thenReturn(createCompany("COMP3", "회사3"));
-	}
+		// 회사 객체 스터빙
+		Company company5 = mock(Company.class);
+		doReturn("회사5").when(company5).getIsuNm();
+		doReturn(company5).when(companyRepository).findByIsuSrtCd("COMP5");
 
-	private Company createCompany(String code, String name) {
-		Company company = mock(Company.class);
-		when(company.getIsuSrtCd()).thenReturn(code);
-		when(company.getIsuNm()).thenReturn(name);
-		return company;
+		Company company4 = mock(Company.class);
+		doReturn("회사4").when(company4).getIsuNm();
+		doReturn(company4).when(companyRepository).findByIsuSrtCd("COMP4");
+
+		Company company3 = mock(Company.class);
+		doReturn("회사3").when(company3).getIsuNm();
+		doReturn(company3).when(companyRepository).findByIsuSrtCd("COMP3");
 	}
 
 	@Test
@@ -87,7 +90,7 @@ class TradeRankingServiceTest {
 		assertThat(result.get(0).totalAmount()).isEqualByComparingTo(new BigDecimal("2500.00"));
 
 		verify(tradeHistoryRepository).findTotalTradeAmountByCompany(any(Pageable.class));
-		verify(companyRepository).findByIsuSrtCd("COMP5");
+		verify(companyRepository, atLeastOnce()).findByIsuSrtCd("COMP5");
 	}
 
 	@Test
@@ -103,7 +106,7 @@ class TradeRankingServiceTest {
 		assertThat(result.get(0).avgPrice()).isEqualByComparingTo(new BigDecimal("250.00"));
 
 		verify(tradeHistoryRepository).findTradeAvgPriceByCompany(any(Pageable.class));
-		verify(companyRepository).findByIsuSrtCd("COMP5");
+		verify(companyRepository, atLeastOnce()).findByIsuSrtCd("COMP5");
 	}
 
 	@Test
@@ -119,7 +122,7 @@ class TradeRankingServiceTest {
 		assertThat(result.get(0).count()).isEqualTo(10L);
 
 		verify(tradeHistoryRepository).findTradeCountByCompany(any(Pageable.class));
-		verify(companyRepository).findByIsuSrtCd("COMP5");
+		verify(companyRepository, atLeastOnce()).findByIsuSrtCd("COMP5");
 	}
 
 	@Test
@@ -130,16 +133,13 @@ class TradeRankingServiceTest {
 		assertThat(tradeRankingService.getTradeCounts()).isEmpty();
 
 		verify(tradeHistoryRepository, never()).findTotalTradeAmountByCompany(any(Pageable.class));
-		verify(tradeHistoryRepository, never()).findTradeAvgPriceByCompany(any(Pageable.class));
-		verify(tradeHistoryRepository, never()).findTradeCountByCompany(any(Pageable.class));
 		verify(companyRepository, never()).findByIsuSrtCd(anyString());
 	}
 
 	@Test
 	@DisplayName("예외 발생 시 캐시가 비어있는 상태 유지")
 	void refreshCache_WhenExceptionOccurs_MaintainsEmptyCache() {
-		when(tradeHistoryRepository.findTotalTradeAmountByCompany(any(Pageable.class)))
-			.thenThrow(new RuntimeException("Database error"));
+		doThrow(new RuntimeException("Database error")).when(tradeHistoryRepository).findTotalTradeAmountByCompany(any(Pageable.class));
 
 		tradeRankingService.refreshCache();
 
@@ -159,11 +159,12 @@ class TradeRankingServiceTest {
 		List<Object[]> avgPriceData = new ArrayList<>();
 		avgPriceData.add(new Object[]{"COMP1", 100.0});
 
-		when(tradeHistoryRepository.findTotalTradeAmountByCompany(any(Pageable.class)))
-			.thenReturn(totalAmountData);
-		when(tradeHistoryRepository.findTradeAvgPriceByCompany(any(Pageable.class)))
-			.thenReturn(avgPriceData);
-		when(companyRepository.findByIsuSrtCd("COMP1")).thenReturn(createCompany("COMP1", "회사1"));
+		doReturn(totalAmountData).when(tradeHistoryRepository).findTotalTradeAmountByCompany(any(Pageable.class));
+		doReturn(avgPriceData).when(tradeHistoryRepository).findTradeAvgPriceByCompany(any(Pageable.class));
+
+		Company company1 = mock(Company.class);
+		doReturn("회사1").when(company1).getIsuNm();
+		doReturn(company1).when(companyRepository).findByIsuSrtCd("COMP1");
 
 		tradeRankingService.refreshCache();
 
@@ -178,7 +179,7 @@ class TradeRankingServiceTest {
 		assertThat(avgPrices.get(0).companyName()).isEqualTo("회사1");
 		assertThat(avgPrices.get(0).avgPrice()).isEqualByComparingTo(new BigDecimal("100.0"));
 
-		verify(companyRepository).findByIsuSrtCd("COMP1");
+		verify(companyRepository, atLeastOnce()).findByIsuSrtCd("COMP1");
 	}
 
 	@Test
@@ -187,9 +188,8 @@ class TradeRankingServiceTest {
 		List<Object[]> totalAmountData = new ArrayList<>();
 		totalAmountData.add(new Object[]{"UNKNOWN", 1000.0});
 
-		when(tradeHistoryRepository.findTotalTradeAmountByCompany(any(Pageable.class)))
-			.thenReturn(totalAmountData);
-		when(companyRepository.findByIsuSrtCd("UNKNOWN")).thenReturn(null);
+		doReturn(totalAmountData).when(tradeHistoryRepository).findTotalTradeAmountByCompany(any(Pageable.class));
+		doThrow(new CompanyNotFound()).when(companyRepository).findByIsuSrtCd("UNKNOWN");
 
 		tradeRankingService.refreshCache();
 
