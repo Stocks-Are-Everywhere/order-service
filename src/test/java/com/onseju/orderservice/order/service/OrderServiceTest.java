@@ -3,7 +3,10 @@ package com.onseju.orderservice.order.service;
 import com.onseju.orderservice.events.publisher.MatchedEventPublisher;
 import com.onseju.orderservice.events.publisher.OrderEventPublisher;
 import com.onseju.orderservice.fake.FakeOrderRepository;
+import com.onseju.orderservice.global.response.ApiResponse;
+import com.onseju.orderservice.global.utils.TsidGenerator;
 import com.onseju.orderservice.order.client.UserServiceClient;
+import com.onseju.orderservice.order.controller.resposne.OrderResponse;
 import com.onseju.orderservice.order.domain.Type;
 import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
 import com.onseju.orderservice.order.dto.OrderValidationResponse;
@@ -24,6 +27,7 @@ import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
@@ -36,14 +40,18 @@ class OrderServiceTest {
 	OrderEventPublisher eventPublisher;
 	MatchedEventPublisher matchedEventPublisher;
 	UserServiceClient userServiceClient;
+	TsidGenerator tsidGenerator;
 
 	@BeforeEach
 	void setUp() {
 		eventPublisher = Mockito.mock(OrderEventPublisher.class);
 		matchedEventPublisher = Mockito.mock(MatchedEventPublisher.class);
 		userServiceClient = Mockito.mock(UserServiceClient.class);
+		tsidGenerator = Mockito.mock(TsidGenerator.class);
 		SimpMessagingTemplate messagingTemplate = Mockito.mock(SimpMessagingTemplate.class);
-		orderService = new OrderService(orderRepository, companyRepository, eventPublisher, matchedEventPublisher, userServiceClient, orderMapper, messagingTemplate);
+		orderService = new OrderService(
+			orderRepository, companyRepository, eventPublisher, matchedEventPublisher, 
+			userServiceClient, orderMapper, tsidGenerator, messagingTemplate);
 	}
 
 	@Nested
@@ -55,8 +63,30 @@ class OrderServiceTest {
 			BeforeTradeOrderDto params = createBeforeTradeOrderDto("LIMIT_BUY", new BigDecimal(1), new BigDecimal(1000), 1L);
 			when(userServiceClient.validateOrder(any()))
 				.thenReturn(new OrderValidationResponse(1L, true));
-
 			assertThatNoException().isThrownBy(() -> orderService.placeOrder(params));
+		}
+
+		@Test
+		@DisplayName("주문 생성 성공 테스트")
+		void placeOrderSuccess() {
+			// given
+			BeforeTradeOrderDto params = createBeforeTradeOrderDto("LIMIT_BUY", new BigDecimal(1), new BigDecimal(1000), 1L);
+			when(userServiceClient.validateOrder(any()))
+				.thenReturn(new OrderValidationResponse(1L, true));
+
+			OrderResponse expected = new OrderResponse(
+					1L,
+					params.companyCode(),
+					Type.valueOf(params.type()),
+					params.totalQuantity(),
+					params.price()
+			);
+			ApiResponse<OrderResponse> response = orderService.placeOrder(params);
+			assertThat(response.getMessage()).isEqualTo("주문 접수 성공");
+			assertThat(response.getData().companyCode()).isEqualTo(expected.companyCode());
+			assertThat(response.getData().type()).isEqualTo(expected.type());
+			assertThat(response.getData().totalQuantity()).isEqualTo(expected.totalQuantity());
+			assertThat(response.getData().price()).isEqualTo(expected.price());
 		}
 	}
 

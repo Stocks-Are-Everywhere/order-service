@@ -1,10 +1,14 @@
 package com.onseju.orderservice.order.controller;
 
+import com.onseju.orderservice.global.response.ApiResponse;
 import com.onseju.orderservice.global.security.UserDetailsImpl;
 import com.onseju.orderservice.order.controller.request.OrderRequest;
+import com.onseju.orderservice.order.controller.resposne.OrderResponse;
 import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
 import com.onseju.orderservice.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,7 +24,7 @@ public class OrderController {
 	private final OrderService orderService;
 
 	@PostMapping
-	public ResponseEntity<Void> received(
+	public ResponseEntity<ApiResponse<OrderResponse>> received(
 			@RequestBody final OrderRequest request,
 			@AuthenticationPrincipal final UserDetailsImpl user
 	) {
@@ -31,7 +35,7 @@ public class OrderController {
 				.price(request.price())
 				.memberId(user.getMember().getId())
 				.build();
-		orderService.placeOrder(dto);
-		return ResponseEntity.ok().build();
+			ApiResponse<OrderResponse> response = orderService.placeOrder(dto);
+		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
 }
