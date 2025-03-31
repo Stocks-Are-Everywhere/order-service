@@ -121,7 +121,25 @@ jobs:
                 "docker pull ${{ secrets.DOCKERHUB_USERNAME }}/onseju-app:order",
                 "docker stop order-service || true",
                 "docker rm order-service || true",
-                "docker run -d --name order-service --restart always -p 8081:8080 ${{ secrets.DOCKERHUB_USERNAME }}/onseju-app:order",
+                "docker run -d --name order-service --restart always -p 8081:8080 \
+                  -e DB_URL=\"${{ secrets.DB_URL }}\" \
+                  -e DB_USERNAME=\"${{ secrets.DB_USERNAME }}\" \
+                  -e DB_PASSWORD=\"${{ secrets.DB_PASSWORD }}\" \
+                  -e DB_HOST=\"${{ secrets.DB_HOST }}\" \
+                  -e DB_PORT=\"${{ secrets.DB_PORT }}\" \
+                  -e DB_NAME=\"${{ secrets.DB_NAME }}\" \
+                  -e RABBITMQ_HOST=\"${{ secrets.RABBITMQ_HOST }}\" \
+                  -e RABBITMQ_PORT=\"${{ secrets.RABBITMQ_PORT }}\" \
+                  -e RABBITMQ_USERNAME=\"${{ secrets.RABBITMQ_USERNAME }}\" \
+                  -e RABBITMQ_PASSWORD=\"${{ secrets.RABBITMQ_PASSWORD }}\" \
+                  -e JWT_SECRET_KEY=\"${{ secrets.JWT_SECRET_KEY }}\" \
+                  -e GOOGLE_CLIENT_ID=\"${{ secrets.GOOGLE_CLIENT_ID }}\" \
+                  -e GOOGLE_CLIENT_SECRET=\"${{ secrets.GOOGLE_CLIENT_SECRET }}\" \
+                  -e GOOGLE_REDIRECT_URI=\"${{ secrets.GOOGLE_REDIRECT_URI }}\" \
+                  -e GOOGLE_TOKEN_URI=\"${{ secrets.GOOGLE_TOKEN_URI }}\" \
+                  -e GOOGLE_USER_INFO=\"${{ secrets.GOOGLE_USER_INFO }}\" \
+                  -e USER_SERVICE_BASE_URL=\"${{ secrets.USER_SERVICE_BASE_URL }}\" \
+                  ${{ secrets.DOCKERHUB_USERNAME }}/onseju-app:order",
                 "docker image prune -af --filter \"until=24h\""
               ]
             }' \

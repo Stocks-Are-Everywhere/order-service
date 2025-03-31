@@ -12,7 +12,7 @@ spring:
     password: ${DB_PASSWORD}
 
   jpa:
-    hibernate.ddl-auto: update
+    hibernate.ddl-auto: create
     show-sql: true
     properties:
       hibernate.criteria.literal_handling_mode: BIND
@@ -69,10 +69,10 @@ google:
     uri: ${GOOGLE_USER_INFO}
 
 user-service:
-  url: ${USER_SERVICE_BASE_URL}
+  url: ${USER_SERVICE_BASE_URL}:8080
 
 grpc:
   client:
     order-service:
-      address: static://user-service:9090
+      address: static://${USER_SERVICE_BASE_URL}:9090
       negotiation-type: PLAINTEXT
