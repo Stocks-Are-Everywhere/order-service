@@ -15,6 +15,7 @@ import com.onseju.orderservice.tradehistory.service.TradeHistoryNotificationServ
 import com.onseju.orderservice.tradehistory.service.TradeHistoryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
@@ -26,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doNothing;
 
 
 @SpringBootTest()
@@ -58,13 +60,15 @@ class TradeEventListenerTest {
 	@Autowired
 	private OrderRepository orderRepository;
 
-	@Autowired
+	@Mock
 	private TradeHistoryNotificationService tradeHistoryNotificationService;
 
 	private MatchedEvent matchedEvent;
 
 	@BeforeEach
 	void setUp() {
+		matchedEventListener = new MatchedEventListener(tradeHistoryService, tradeHistoryMapper, orderService,
+				orderMapper, chartService, tradeHistoryNotificationService);
 		// 테스트를 위한 실제 데이터 생성
 		Order buyOrder = Order.builder()
 				.id(1L)
@@ -108,15 +112,14 @@ class TradeEventListenerTest {
 				BigDecimal.valueOf(1000),
 				Instant.now().toEpochMilli()
 		);
-
-		tradeHistoryNotificationService.subscribe(1L);
-		tradeHistoryNotificationService.subscribe(2L);
 	}
 
 	@Test
 	@Transactional
 	void testCreateTradeHistoryEvent() {
 		// tradeEventListener 호출
+		doNothing()
+				.when(tradeHistoryNotificationService).sendNotification(matchedEvent);
 		matchedEventListener.handleOrderMatched(matchedEvent);
 
 		// 2. 차감 내역 조회
