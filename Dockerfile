@@ -10,10 +10,11 @@ COPY . .
 RUN chmod +x ./gradlew
 
 # 실행 가능한 jar 파일만 생성
-RUN ./gradlew bootJar --no-daemon
+RUN ./gradlew clean build -x test
 
 FROM amazoncorretto:17.0.7-alpine
 WORKDIR /app
 COPY --from=builder /app/build/libs/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
