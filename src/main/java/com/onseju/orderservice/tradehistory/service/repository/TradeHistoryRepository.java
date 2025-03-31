@@ -1,5 +1,6 @@
 package com.onseju.orderservice.tradehistory.service.repository;
 
+import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.tradehistory.domain.TradeHistory;
 import org.springframework.data.domain.Pageable;
 
@@ -19,5 +20,7 @@ public interface TradeHistoryRepository  {
 	List<Object[]> findTradeAvgPriceByCompany(Pageable pageable);
 
 	List<Object[]> findTradeCountByCompany(Pageable pageable);
+
+	List<TradeHistory> findByOrderId(Order order);
 
 }

@@ -42,4 +42,8 @@ public interface TradeHistoryJpaRepository extends JpaRepository<TradeHistory, L
 	@Query("SELECT t.companyCode, COUNT(t) as tradeCount " +
 		"FROM TradeHistory t GROUP BY t.companyCode ORDER BY tradeCount DESC")
 	List<Object[]> findTradeCountByCompany(Pageable pageable);
+
+	List<TradeHistory> findBySellOrderId(Long orderId);
+
+	List<TradeHistory> findByBuyOrderId(Long orderId);
 }

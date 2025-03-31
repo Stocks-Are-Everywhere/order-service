@@ -1,15 +1,14 @@
 package com.onseju.orderservice.tradehistory.repository;
 
-import java.util.List;
-
+import com.onseju.orderservice.order.domain.Order;
+import com.onseju.orderservice.tradehistory.domain.TradeHistory;
+import com.onseju.orderservice.tradehistory.service.repository.TradeHistoryRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
-import com.onseju.orderservice.tradehistory.domain.TradeHistory;
-import com.onseju.orderservice.tradehistory.service.repository.TradeHistoryRepository;
-
-import lombok.RequiredArgsConstructor;
+import java.util.List;
 
 @Repository
 @RequiredArgsConstructor
@@ -54,5 +53,13 @@ public class TradeHistoryRepositoryImpl implements TradeHistoryRepository {
 	@Override
 	public List<Object[]> findTradeCountByCompany(Pageable pageable) {
 		return tradeHistoryJpaRepository.findTradeCountByCompany(pageable);
+	}
+
+	@Override
+	public List<TradeHistory> findByOrderId(Order order) {
+		if (order.getType().isBuy()) {
+			return tradeHistoryJpaRepository.findByBuyOrderId(order.getId());
+		}
+		return tradeHistoryJpaRepository.findBySellOrderId(order.getId());
 	}
 }

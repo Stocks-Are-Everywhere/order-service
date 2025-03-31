@@ -1,20 +1,5 @@
 package com.onseju.orderservice.listener;
 
-import static org.assertj.core.api.Assertions.*;
-
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.UUID;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.onseju.orderservice.events.OrderCreatedEvent;
 import com.onseju.orderservice.events.listener.OrderEventListener;
 import com.onseju.orderservice.order.domain.Order;
@@ -23,6 +8,18 @@ import com.onseju.orderservice.order.domain.Type;
 import com.onseju.orderservice.order.mapper.OrderMapper;
 import com.onseju.orderservice.order.service.OrderService;
 import com.onseju.orderservice.order.service.repository.OrderRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @TestPropertySource(properties = {

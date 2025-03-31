@@ -1,5 +1,6 @@
 package com.onseju.orderservice.events.listener;
 
+import com.onseju.orderservice.tradehistory.service.TradeHistoryNotificationService;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
@@ -34,6 +35,8 @@ public class MatchedEventListener {
 
 	private final ChartService chartService;
 
+	private final TradeHistoryNotificationService tradeHistoryNotificationService;
+
 	/**
 	 * 주문 매칭 이벤트 처리
 	 * 매칭 엔진에서 매칭이 발생하면 거래 내역 생성
@@ -58,6 +61,9 @@ public class MatchedEventListener {
 
 		// 매칭 후, 사용자 업데이트 이벤트 발행
 		orderService.publishUserUpdateEvent(event);
+
+		// 사용자에게 체결 완료 알람 발송
+		tradeHistoryNotificationService.sendNotification(event);
 	}
 
 	/**

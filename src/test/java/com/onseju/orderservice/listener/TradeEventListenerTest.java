@@ -1,22 +1,8 @@
 package com.onseju.orderservice.listener;
 
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.UUID;
-
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.transaction.annotation.Transactional;
-
 import com.onseju.orderservice.chart.service.ChartService;
 import com.onseju.orderservice.events.MatchedEvent;
 import com.onseju.orderservice.events.listener.MatchedEventListener;
-import com.onseju.orderservice.mock.RabbitMQTestConfig;
 import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.domain.OrderStatus;
 import com.onseju.orderservice.order.domain.Type;
@@ -25,7 +11,19 @@ import com.onseju.orderservice.order.service.OrderService;
 import com.onseju.orderservice.order.service.repository.OrderRepository;
 import com.onseju.orderservice.tradehistory.mapper.TradeHistoryMapper;
 import com.onseju.orderservice.tradehistory.repository.TradeHistoryJpaRepository;
+import com.onseju.orderservice.tradehistory.service.TradeHistoryNotificationService;
 import com.onseju.orderservice.tradehistory.service.TradeHistoryService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -60,6 +58,9 @@ class TradeEventListenerTest {
 	@Autowired
 	private OrderRepository orderRepository;
 
+	@Autowired
+	private TradeHistoryNotificationService tradeHistoryNotificationService;
+
 	private MatchedEvent matchedEvent;
 
 	@BeforeEach
@@ -76,6 +77,7 @@ class TradeEventListenerTest {
 				.timestamp(Instant.now().toEpochMilli())
 				.createdDateTime(LocalDateTime.now())
 				.updatedDateTime(LocalDateTime.now())
+				.accountId(1L)
 				.build();
 		Order sellOrder = Order.builder()
 				.id(2L)
@@ -88,6 +90,7 @@ class TradeEventListenerTest {
 				.timestamp(Instant.now().toEpochMilli())
 				.createdDateTime(LocalDateTime.now())
 				.updatedDateTime(LocalDateTime.now())
+				.accountId(2L)
 				.build();
 
 		// 해당 주문들을 데이터베이스에 저장
@@ -105,6 +108,9 @@ class TradeEventListenerTest {
 				BigDecimal.valueOf(1000),
 				Instant.now().toEpochMilli()
 		);
+
+		tradeHistoryNotificationService.subscribe(1L);
+		tradeHistoryNotificationService.subscribe(2L);
 	}
 
 	@Test
