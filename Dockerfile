@@ -1,9 +1,6 @@
 FROM amazoncorretto:17 as builder
 WORKDIR /app
 
-# 필요한 의존성 설치
-RUN apk add --no-cache bash
-
 COPY . .
 
 # gradlew에 실행 권한 부여
