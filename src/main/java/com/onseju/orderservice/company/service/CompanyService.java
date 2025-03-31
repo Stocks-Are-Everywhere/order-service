@@ -167,4 +167,8 @@ public class CompanyService {
 				.toList();
 	}
 
+	public CompanySearchResponse getCompanyByCode(final String companyCode) {
+		Company company = companyRepository.findByIsuSrtCd(companyCode);
+		return companyMapper.toCompanySearchResponse(company);
+	}
 }

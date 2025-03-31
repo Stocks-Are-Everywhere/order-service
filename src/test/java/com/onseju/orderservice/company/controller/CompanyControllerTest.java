@@ -1,6 +1,7 @@
 package com.onseju.orderservice.company.controller;
 
 import com.onseju.orderservice.company.controller.response.CompanySearchResponse;
+import com.onseju.orderservice.company.exception.CompanyNotFound;
 import com.onseju.orderservice.company.service.CompanyService;
 import com.onseju.orderservice.global.jwt.JwtUtil;
 import com.onseju.orderservice.global.security.UserDetailsServiceImpl;
@@ -110,6 +111,52 @@ class CompanyControllerTest {
 							.param("query", query))
 					.andExpect(status().isOk())
 					.andExpect(jsonPath("$", hasSize(0)));
+		}
+	}
+
+	@Nested
+	@DisplayName("회사 상세 정보 조회 기능 테스트")
+	class getCompanyDetail {
+
+		@Test
+		@DisplayName("회사 코드로 회사 정보 조회 성공")
+		void 회사코드로_회사정보_조회_성공() throws Exception {
+			// given
+			String companyCode = "005930";
+			CompanySearchResponse mockCompany = new CompanySearchResponse(
+				"삼성전자",
+				"005930",
+				"KOSPI",
+				"주권",
+				"삼성전자"
+			);
+			when(companyService.getCompanyByCode(companyCode)).thenReturn(mockCompany);
+
+			// when & then
+			mockMvc.perform(get("/api/companies/{companyCode}", companyCode))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.isuNm").value(mockCompany.isuNm()))
+				.andExpect(jsonPath("$.isuSrtCd").value(mockCompany.isuSrtCd()))
+				.andExpect(jsonPath("$.isuAbbrv").value(mockCompany.isuAbbrv()))
+				.andExpect(jsonPath("$.isEngNm").value(mockCompany.isEngNm()))
+				.andExpect(jsonPath("$.kindstkcertTpNm").value(mockCompany.kindstkcertTpNm()));
+
+			verify(companyService).getCompanyByCode(companyCode);
+		}
+
+		@Test
+		@DisplayName("존재하지 않는 회사 코드로 조회 시 404 에러 반환")
+		void 존재하지않는_회사코드_조회() throws Exception {
+			// given
+			String companyCode = "999999";
+			when(companyService.getCompanyByCode(companyCode))
+				.thenThrow(new CompanyNotFound());
+
+			// when & then
+			mockMvc.perform(get("/api/companies/{companyCode}", companyCode))
+				.andExpect(status().isNotFound());
+
+			verify(companyService).getCompanyByCode(companyCode);
 		}
 	}
 }

@@ -64,4 +64,28 @@ class CompanyServiceTest {
 
 		assertThat(response).hasSize(1);
 	}
+
+	@Test
+	@DisplayName("회사 코드로 회사 정보를 조회한다.")
+	public void getCompanyByCode() {
+		// given
+		String companyCode = "005930";
+		Company company = Company.builder()
+				.isuCd("005930")
+				.isuSrtCd("005930")
+				.isuNm("삼성전자")
+				.isuAbbrv("KOSPI")
+				.isuEngNm("주권")
+				.kindStkcertTpNm("삼성전자")
+				.closingPrice(new BigDecimal(1000))
+				.build();
+		when(companyRepository.findByIsuSrtCd(companyCode)).thenReturn(company);
+		CompanySearchResponse expected = companyMapper.toCompanySearchResponse(company);
+
+		// when
+		CompanySearchResponse response = companyService.getCompanyByCode(companyCode);
+
+		// then
+		assertThat(response).isEqualTo(expected);
+	}
 }
