@@ -96,6 +96,32 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
+      - name: Create env file
+        run: |
+          cat > env-config.sh << 'EOF'
+          cat > /tmp/order-service.env << 'INNEREOF'
+          DB_URL=${{ secrets.DB_URL }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_PORT=${{ secrets.DB_PORT }}
+          DB_NAME=${{ secrets.DB_NAME }}
+          RABBITMQ_HOST=${{ secrets.RABBITMQ_HOST }}
+          RABBITMQ_PORT=${{ secrets.RABBITMQ_PORT }}
+          RABBITMQ_USERNAME=${{ secrets.RABBITMQ_USERNAME }}
+          RABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}
+          JWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}
+          GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REDIRECT_URI=${{ secrets.GOOGLE_REDIRECT_URI }}
+          GOOGLE_TOKEN_URI=${{ secrets.GOOGLE_TOKEN_URI }}
+          GOOGLE_USER_INFO=${{ secrets.GOOGLE_USER_INFO }}
+          USER_SERVICE_BASE_URL=${{ secrets.USER_SERVICE_BASE_URL }}
+          INNEREOF
+          chmod 600 /tmp/order-service.env
+          EOF
+          chmod +x env-config.sh
+
       - name: Deploy to EC2
         env:
           EC2_INSTANCE_ID: ${{ secrets.EC2_INSTANCE_ID }}
@@ -103,19 +129,16 @@ jobs:
           aws ssm send-command \
             --instance-ids $EC2_INSTANCE_ID \
             --document-name "AWS-RunShellScript" \
-            --parameters '{
-              "commands": [
-                "echo \"${{ secrets.DOCKERHUB_TOKEN }}\" | docker login -u \"${{ secrets.DOCKERHUB_USERNAME }}\" --password-stdin",
-                "docker pull ${{ secrets.DOCKERHUB_USERNAME }}/onseju-app:order",
-                "docker stop order-service || true",
-                "docker rm order-service || true",
-                "cat > /tmp/order-service.env << EOF\nDB_URL=${{ secrets.DB_URL }}\nDB_USERNAME=${{ secrets.DB_USERNAME }}\nDB_PASSWORD=${{ secrets.DB_PASSWORD }}\nDB_HOST=${{ secrets.DB_HOST }}\nDB_PORT=${{ secrets.DB_PORT }}\nDB_NAME=${{ secrets.DB_NAME }}\nRABBITMQ_HOST=${{ secrets.RABBITMQ_HOST }}\nRABBITMQ_PORT=${{ secrets.RABBITMQ_PORT }}\nRABBITMQ_USERNAME=${{ secrets.RABBITMQ_USERNAME }}\nRABBITMQ_PASSWORD=${{ secrets.RABBITMQ_PASSWORD }}\nJWT_SECRET_KEY=${{ secrets.JWT_SECRET_KEY }}\nGOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}\nGOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}\nGOOGLE_REDIRECT_URI=${{ secrets.GOOGLE_REDIRECT_URI }}\nGOOGLE_TOKEN_URI=${{ secrets.GOOGLE_TOKEN_URI }}\nGOOGLE_USER_INFO=${{ secrets.GOOGLE_USER_INFO }}\nUSER_SERVICE_BASE_URL=${{ secrets.USER_SERVICE_BASE_URL }}\nEOF",
-                "chmod 600 /tmp/order-service.env",
-                "docker run -d --name order-service --restart always -p 8081:8080 --env-file /tmp/order-service.env ${{ secrets.DOCKERHUB_USERNAME }}/onseju-app:order",
-                "docker image prune -af --filter \"until=24h\"",
-                "rm /tmp/order-service.env"
-              ]
-            }'
+            --parameters commands="[
+              \"echo \\\"${{ secrets.DOCKERHUB_TOKEN }}\\\" | docker login -u \\\"${{ secrets.DOCKERHUB_USERNAME }}\\\" --password-stdin\",
+              \"docker pull ${{ secrets.DOCKERHUB_USERNAME }}/onseju-app:order\",
+              \"docker stop order-service || true\",
+              \"docker rm order-service || true\",
+              \"$(cat env-config.sh)\",
+              \"docker run -d --name order-service --restart always -p 8081:8080 --env-file /tmp/order-service.env ${{ secrets.DOCKERHUB_USERNAME }}/onseju-app:order\",
+              \"docker image prune -af --filter \\\"until=24h\\\"\",
+              \"rm /tmp/order-service.env\"
+            ]"
 
       - name: Deployment notification
         if: success()
