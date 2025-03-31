@@ -2,7 +2,7 @@ package com.onseju.orderservice.listener;
 
 import com.onseju.orderservice.chart.service.ChartService;
 import com.onseju.orderservice.events.MatchedEvent;
-import com.onseju.orderservice.events.listener.OrderEventListener;
+import com.onseju.orderservice.events.listener.MatchedEventListener;
 import com.onseju.orderservice.order.domain.Order;
 import com.onseju.orderservice.order.domain.OrderStatus;
 import com.onseju.orderservice.order.domain.Type;
@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -28,10 +29,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 
 @SpringBootTest()
+@TestPropertySource(properties = {
+    "spring.rabbitmq.listener.simple.auto-startup=false"
+})
 class TradeEventListenerTest {
 
 	@Autowired
-	private OrderEventListener orderEventListener;
+	private MatchedEventListener matchedEventListener;
 
 	@Autowired
 	TradeHistoryService tradeHistoryService;
@@ -63,6 +67,7 @@ class TradeEventListenerTest {
 	void setUp() {
 		// 테스트를 위한 실제 데이터 생성
 		Order buyOrder = Order.builder()
+				.id(1L)
 				.companyCode("005930")
 				.type(Type.LIMIT_BUY)
 				.totalQuantity(new BigDecimal("100"))
@@ -75,6 +80,7 @@ class TradeEventListenerTest {
 				.accountId(1L)
 				.build();
 		Order sellOrder = Order.builder()
+				.id(2L)
 				.companyCode("005930")
 				.type(Type.LIMIT_SELL)
 				.totalQuantity(new BigDecimal("100"))
@@ -111,7 +117,7 @@ class TradeEventListenerTest {
 	@Transactional
 	void testCreateTradeHistoryEvent() {
 		// tradeEventListener 호출
-		orderEventListener.handleOrderMatched(matchedEvent);
+		matchedEventListener.handleOrderMatched(matchedEvent);
 
 		// 2. 차감 내역 조회
 		Order updatedBuyOrder = orderRepository.getById(1L);

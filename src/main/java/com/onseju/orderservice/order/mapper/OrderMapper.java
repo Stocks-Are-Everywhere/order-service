@@ -15,8 +15,9 @@ import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
 
 @Component
 public class OrderMapper {
-	public Order toEntity(final BeforeTradeOrderDto dto, final Long accountId) {
+	public Order toEntity(final Long orderId, final BeforeTradeOrderDto dto, final Long accountId) {
 		return Order.builder()
+				.id(orderId)
 				.companyCode(dto.companyCode())
 				.type(Type.valueOf(dto.type()))
 				.totalQuantity(dto.totalQuantity())
@@ -25,6 +26,20 @@ public class OrderMapper {
 				.price(dto.price())
 				.accountId(accountId)
 				.timestamp(Instant.now().toEpochMilli())
+				.build();
+	}
+
+	public Order toEntity(final OrderCreatedEvent event) {
+		return Order.builder()
+				.id(event.orderId())
+				.companyCode(event.companyCode())
+				.type(event.type())
+				.totalQuantity(event.totalQuantity())
+				.remainingQuantity(event.totalQuantity())
+				.status(OrderStatus.ACTIVE)
+				.price(event.price())
+				.accountId(event.accountId())
+				.timestamp(event.timestamp())
 				.build();
 	}
 
