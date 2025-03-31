@@ -3,6 +3,7 @@ package com.onseju.orderservice.company.controller;
 import com.onseju.orderservice.company.controller.response.CompanySearchResponse;
 import com.onseju.orderservice.company.service.CompanyService;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,5 +35,10 @@ public class CompanyController {
 		}
 		return companyService.searchCompanies(query);
 	}
+
+	@GetMapping("/{companyCode}")
+    public CompanySearchResponse getCompanyByCode(@PathVariable final String companyCode) {
+        return companyService.getCompanyByCode(companyCode);
+    }
 }
 
