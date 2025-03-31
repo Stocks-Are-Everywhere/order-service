@@ -1,7 +1,16 @@
 FROM amazoncorretto:17.0.7-alpine as builder
 WORKDIR /app
+
+# 필요한 의존성 설치
+RUN apk add --no-cache bash
+
 COPY . .
-RUN ./gradlew bootJar
+
+# gradlew에 실행 권한 부여
+RUN chmod +x ./gradlew
+
+# 실행 가능한 jar 파일만 생성
+RUN ./gradlew bootJar --no-daemon
 
 FROM amazoncorretto:17.0.7-alpine
 WORKDIR /app
