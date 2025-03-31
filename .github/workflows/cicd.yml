@@ -77,17 +77,6 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Git 태그에서 버전 추출 혹은 기본값 사용
-      - name: Extract version
-        id: version
-        run: |
-          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
-            echo "tag=latest" >> $GITHUB_OUTPUT
-          else
-            echo "tag=dev" >> $GITHUB_OUTPUT
-          fi
-          echo "date=$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
-
       # 서비스별 도커 이미지 빌드 및 푸시
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -96,8 +85,7 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ${{ secrets.DOCKERHUB_USERNAME }}/onseju-app:${{ steps.version.outputs.tag }}
-            ${{ secrets.DOCKERHUB_USERNAME }}/onseju-app:${{ steps.version.outputs.date }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/onseju-app:order
           cache-from: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/onseju-app:buildcache
           cache-to: type=registry,ref=${{ secrets.DOCKERHUB_USERNAME }}/onseju-app:buildcache,mode=max
 
