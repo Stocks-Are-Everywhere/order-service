@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -40,10 +41,10 @@ public class TradeHistoryNotificationService {
 
     private void sendNotificationToSellOrder(final MatchedEvent event) throws IOException {
         Order sellOrder = orderRepository.getById(event.sellOrderId());
-        SseEmitter sellOrderEmitter = orderNotificationRepository.findByMemberId(sellOrder.getAccountId());
+        Optional<SseEmitter> sellOrderEmitter = orderNotificationRepository.findByMemberId(sellOrder.getAccountId());
 
-        if (sellOrderEmitter != null) {
-            sellOrderEmitter.send(toMatchingNotificationDto(sellOrder, event));
+        if (sellOrderEmitter.isPresent()) {
+            sellOrderEmitter.get().send(toMatchingNotificationDto(sellOrder, event));
         } else {
             System.err.println("SellOrderEmitter is null for memberId: "
                     + sellOrder.getAccountId());
@@ -52,10 +53,10 @@ public class TradeHistoryNotificationService {
 
     private void sendNotificationToBuyOrder(final MatchedEvent event) throws IOException {
         Order buyOrder = orderRepository.getById(event.buyOrderId());
-        SseEmitter buyOrderEmitter = orderNotificationRepository.findByMemberId(buyOrder.getAccountId());
+        Optional<SseEmitter> buyOrderEmitter = orderNotificationRepository.findByMemberId(buyOrder.getAccountId());
 
-        if (buyOrderEmitter != null) {
-            buyOrderEmitter.send(toMatchingNotificationDto(buyOrder, event));
+        if (buyOrderEmitter.isPresent()) {
+            buyOrderEmitter.get().send(toMatchingNotificationDto(buyOrder, event));
         } else {
             System.err.println("BuyOrderEmitter is null for memberId: "
                     + buyOrder.getAccountId());
