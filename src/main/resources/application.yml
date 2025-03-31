@@ -27,8 +27,8 @@ spring:
   logging.level:
     org.hibernate.SQL: debug
     org.hibernate.type: trace
-#    # WebSocket ???
-#    org.springframework.web.socket: DEBUG
+  #    # WebSocket ???
+  #    org.springframework.web.socket: DEBUG
 
   ki:
     appKey: ${KOREAINVEST_CLIENT_ID}
@@ -53,7 +53,7 @@ jwt:
     key: ${JWT_SECRET_KEY}
 
 tsid:
-  node-id: ${TSID_NODE_ID}
+  node-id: 1
   use-secure-random: false  # 보안 강화된 난수 생성기 사용 여부
   batch-size: 1000  # ID 배치 생성 시 크기
 
@@ -70,7 +70,7 @@ google:
 
 user-service:
   url: ${USER_SERVICE_BASE_URL}
-  
+
 grpc:
   client:
     order-service:
