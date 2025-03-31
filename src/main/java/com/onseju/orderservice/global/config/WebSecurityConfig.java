@@ -1,9 +1,8 @@
 package com.onseju.orderservice.global.config;
 
-import com.onseju.orderservice.global.jwt.JwtUtil;
-import com.onseju.orderservice.global.security.JwtAuthorizationFilter;
-import com.onseju.orderservice.global.security.UserDetailsServiceImpl;
-import lombok.RequiredArgsConstructor;
+import java.util.Arrays;
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -21,8 +20,11 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import java.util.Arrays;
-import java.util.List;
+import com.onseju.orderservice.global.jwt.JwtUtil;
+import com.onseju.orderservice.global.security.JwtAuthorizationFilter;
+import com.onseju.orderservice.global.security.UserDetailsServiceImpl;
+
+import lombok.RequiredArgsConstructor;
 
 @Configuration
 @RequiredArgsConstructor
@@ -53,7 +55,8 @@ public class WebSecurityConfig implements WebMvcConfigurer {
 						"http://localhost:8080",
 						"http://localhost:8081",
 						"http://localhost:3000",
-						"https://accounts.google.com"
+						"https://accounts.google.com",
+						"http://onseju.store:3000"
 				)
 				.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
 				.exposedHeaders("Authorization")
@@ -68,7 +71,8 @@ public class WebSecurityConfig implements WebMvcConfigurer {
 				"http://localhost:8080",
 				"http://localhost:8081",
 				"http://localhost:3000",
-				"https://accounts.google.com"
+				"https://accounts.google.com",
+				"http://onseju.store:3000"
 		));
 		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
