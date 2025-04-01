@@ -1,13 +1,5 @@
 package com.onseju.orderservice.order.controller;
 
-import com.onseju.orderservice.global.response.ApiResponse;
-import com.onseju.orderservice.global.security.UserDetailsImpl;
-import com.onseju.orderservice.order.controller.request.OrderRequest;
-import com.onseju.orderservice.order.controller.resposne.OrderResponse;
-import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
-import com.onseju.orderservice.order.service.OrderService;
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -15,6 +7,15 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.onseju.orderservice.global.response.ApiResponse;
+import com.onseju.orderservice.global.security.UserDetailsImpl;
+import com.onseju.orderservice.order.controller.request.OrderRequest;
+import com.onseju.orderservice.order.controller.resposne.OrderResponse;
+import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
+import com.onseju.orderservice.order.service.OrderService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/order")
@@ -35,7 +36,7 @@ public class OrderController {
 				.price(request.price())
 				.memberId(user.getMember().getId())
 				.build();
-			ApiResponse<OrderResponse> response = orderService.placeOrder(dto);
+		ApiResponse<OrderResponse> response = orderService.placeOrder(dto);
 		return ResponseEntity.status(HttpStatus.OK).body(response);
 	}
 }
