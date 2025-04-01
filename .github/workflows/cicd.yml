@@ -117,6 +117,14 @@ jobs:
           GOOGLE_TOKEN_URI=${{ secrets.GOOGLE_TOKEN_URI }}
           GOOGLE_USER_INFO=${{ secrets.GOOGLE_USER_INFO }}
           USER_SERVICE_BASE_URL=${{ secrets.USER_SERVICE_BASE_URL }}
+          KI_APPROVAL_URL=${{ secrets.KI_APPROVAL_URL }}
+          KI_GRANT_TYPE=${{ secrets.KI_GRANT_TYPE }}
+          KI_APP_KEY_1=${{ secrets.KI_APP_KEY_1 }}
+          KI_SECRET_KEY_1=${{ secrets.KI_SECRET_KEY_1 }}
+          KI_APP_KEY_2=${{ secrets.KI_APP_KEY_2 }}
+          KI_SECRET_KEY_2=${{ secrets.KI_SECRET_KEY_2 }}
+          KI_STOCK_WS_URL=${{ secrets.KI_STOCK_WS_URL }}
+          KI_HOGA_WS_URL=${{ secrets.KI_HOGA_WS_URL }}
           INNEREOF
           chmod 600 /tmp/order-service.env
           EOF
