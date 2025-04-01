@@ -57,6 +57,7 @@ tsid:
   use-secure-random: false  # 보안 강화된 난수 생성기 사용 여부
   batch-size: 1000  # ID 배치 생성 시 크기
 
+
 google:
   client:
     id: ${GOOGLE_CLIENT_ID}
