@@ -29,13 +29,6 @@ spring:
   logging.level:
     org.hibernate.SQL: debug
     org.hibernate.type: trace
-  #    # WebSocket ???
-  #    org.springframework.web.socket: DEBUG
-
-  ki:
-    appKey: ${KOREAINVEST_CLIENT_ID}
-    appSecret: ${KOREAINVEST_CLIENT_SECRET}
-    accountNo: ""
 
   rabbitmq:
     host: ${RABBITMQ_HOST}
@@ -45,10 +38,17 @@ spring:
     publisher-confirm-type: correlated
     publisher-returns: true
 
-webSocket:
-  server:
-    websocketKey: ${KOREAINVEST_WEBSOCKET_KEY}
-    url: ${KOREAINVEST_API_URL}
+
+ki:
+  approvalUrl: ${KI_APPROVAL_URL}
+  grantType: ${KI_GRANT_TYPE}
+  appKey_1: ${KI_APP_KEY_1}
+  secretKey_1: ${KI_SECRET_KEY_1}
+  appKey_2: ${KI_APP_KEY_2}
+  secretKey_2: ${KI_SECRET_KEY_2}
+
+  stockWsUrl: ${KI_STOCK_WS_URL}
+  hogaWsUrl: ${KI_HOGA_WS_URL}
 
 jwt:
   secret:
@@ -58,6 +58,7 @@ tsid:
   node-id: 1
   use-secure-random: false  # 보안 강화된 난수 생성기 사용 여부
   batch-size: 1000  # ID 배치 생성 시 크기
+
 
 google:
   client:
