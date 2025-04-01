@@ -56,7 +56,7 @@ public class WebSecurityConfig implements WebMvcConfigurer {
 						"http://localhost:8081",
 						"http://localhost:3000",
 						"https://accounts.google.com",
-						"http://onseju.store/"
+						"http://onseju.store"
 				)
 				.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
 				.exposedHeaders("Authorization")
@@ -72,7 +72,7 @@ public class WebSecurityConfig implements WebMvcConfigurer {
 				"http://localhost:8081",
 				"http://localhost:3000",
 				"https://accounts.google.com",
-				"http://onseju.store/"
+				"http://onseju.store"
 		));
 		configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
 		configuration.setAllowedHeaders(Arrays.asList("Authorization", "Cache-Control", "Content-Type"));
