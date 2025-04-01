@@ -2,9 +2,9 @@ name: CICD
 
 on:
   push:
-    branches: [ main, develop, user/hugh/feat/#41 ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ main, develop, user/hugh/feat/#41 ]
+    branches: [ main, develop ]
 
 jobs:
   build:
@@ -57,7 +57,7 @@ jobs:
 
   docker:
     needs: build
-    if: success() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop' || github.ref == 'refs/heads/user/hugh/feat/#41')
+    if: success() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
     runs-on: ubuntu-latest
 
     steps:
@@ -85,7 +85,7 @@ jobs:
 
   deploy:
     needs: docker
-    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.ref == 'refs/heads/user/hugh/feat/#41' && github.event_name == 'push')
+    if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || (github.ref == 'refs/heads/develop' && github.event_name == 'push')
     runs-on: ubuntu-latest
 
     steps:
