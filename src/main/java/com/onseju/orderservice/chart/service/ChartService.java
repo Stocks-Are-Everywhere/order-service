@@ -13,7 +13,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.springframework.data.domain.PageRequest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -377,20 +376,35 @@ public class ChartService {
 
 			candles.set(candles.size() - 1, updatedCandle);
 		} else if (candleTime > lastCandle.time()) {
-			// 새 캔들 추가
-			for (Long time = lastCandle.time() + timeFrameSeconds; time < candleTime; time += timeFrameSeconds) {
+			// 새 캔들 추가 - 최대 캔들 수를 제한하고 너무 큰 시간 격차는 건너뜁니다
+			final int MAX_CANDLES_TO_FILL = 100; // 한 번에 생성할 수 있는 최대 캔들 수
+
+			// 시간 격차가 너무 크면 마지막 캔들부터 최근 시간까지만 채웁니다
+			long startTime = lastCandle.time() + timeFrameSeconds;
+			long gapCount = (candleTime - startTime) / timeFrameSeconds + 1;
+
+			if (gapCount > MAX_CANDLES_TO_FILL) {
+				// 큰 시간 격차가 있는 경우, 가장 최근 시간대에 가까운 캔들만 생성
+				startTime = candleTime - (MAX_CANDLES_TO_FILL - 1) * timeFrameSeconds;
+				log.info("큰 시간 격차 감지: {} 캔들 중 마지막 {}개만 생성합니다", gapCount, MAX_CANDLES_TO_FILL);
+			}
+
+			// 필요한 빈 캔들만 생성
+			for (Long time = startTime; time < candleTime; time += timeFrameSeconds) {
 				candles.add(createCandle(time, lastCandle.close(), lastCandle.close(),
 						lastCandle.close(), lastCandle.close(), 0));
 			}
 
+			// 실제 거래 캔들 추가
 			candles.add(createCandle(candleTime, price, price, price, price, volume));
 
-			// 캔들 개수 제한
+			// 캔들 개수 제한 (더 효율적인 방식으로 수정)
 			if (candles.size() > CANDLE_KEEP_NUMBER) {
-				List<CandleDto> limitedCandles = new ArrayList<>(
-						candles.subList(candles.size() - CANDLE_KEEP_NUMBER, candles.size()));
-				candles.clear();
-				candles.addAll(limitedCandles);
+				// 앞에서부터 불필요한 캔들 제거
+				int removeCount = candles.size() - CANDLE_KEEP_NUMBER;
+				for (int i = 0; i < removeCount; i++) {
+					candles.remove(0); // 첫 번째 요소 제거
+				}
 			}
 		}
 	}
