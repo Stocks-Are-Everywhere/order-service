@@ -10,12 +10,19 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.json.simple.JSONObject;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketHandler;
@@ -31,66 +38,164 @@ import com.onseju.orderservice.ki.dto.KIStockDto;
 import com.onseju.orderservice.ki.dto.KIStockHogaDto;
 import com.onseju.orderservice.order.domain.Type;
 import com.onseju.orderservice.order.dto.BeforeTradeOrderDto;
-import com.onseju.orderservice.order.mapper.OrderMapper;
 import com.onseju.orderservice.order.service.OrderService;
 import com.onseju.orderservice.tradehistory.domain.TradeHistory;
 
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 한국투자증권 WebSocket 클라이언트
+ * 주식 데이터 및 호가 데이터를 실시간으로 수신하기 위한 WebSocket 연결을 관리
+ */
 @Component
 @Slf4j
 @RequiredArgsConstructor
 public class KIWebSocketClient {
-
 	private final Map<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
 
-	private static final String KIS_STOCK_URL = "ws://ops.koreainvestment.com:31000/tryitout/H0STCNT0";
-	private static final String KIS_HOGA_URL = "ws://ops.koreainvestment.com:31000/tryitout/H0STASP0";
-
-	// @Value("${ki.appSecret}")
-	private final String APPROVAL_KEY_1 = "";
-
-	private final String APPROVAL_KEY_2 = "";
+	private String stockApprovalKey;  // 주식 데이터용 approval key
+	private String hogaApprovalKey;   // 호가 데이터용 approval key
+	private Long tokenExpireTime;     // 토큰 만료 시간 (밀리초 타임스탬프)
 
 	private final OrderService orderService;
 	private final ChartService chartService;
-	private final OrderMapper orderMapper;
 	private final TsidGenerator tsidGenerator;
+	private final RestTemplate restTemplate;
+
+	@Value("${ki.approvalUrl}")
+	private String approvalUrl;
+
+	@Value("${ki.grantType}")
+	private String grantKey;
+
+	// 체결 WebSocket 설정
+	@Value("${ki.stockWsUrl}")
+	private String stockWsUrl;
+	@Value("${ki.appKey_1}")
+	private String appKey_1;
+	@Value("${ki.secretKey_1}")
+	private String secretKey_1;
+
+	// 호가 WebSocket 설정
+	@Value("${ki.hogaWsUrl}")
+	private String hogaWsUrl;
+	@Value("${ki.appKey_2}")
+	private String appKey_2;
+	@Value("${ki.secretKey_2}")
+	private String secretKey_2;
 
 	/**
-	 * 주식 데이터 WebSocket 연결
+	 * 앱 시작 시 토큰 발급
 	 */
-	public void connectStockData(String stockCode) {
-		connect(APPROVAL_KEY_1, stockCode, KIS_STOCK_URL, "H0STCNT0", this::handleStockDataMessage);
+	@PostConstruct
+	public void init() {
+		generateApprovalKeys();
+	}
+
+	/**
+	 * 한국투자증권 API 승인키 발급
+	 * 주식 데이터와 호가 데이터 각각에 대한 승인키를 발급하고 만료 시간 설정
+	 */
+	public void generateApprovalKeys() {
+		try {
+			// 주식 데이터용 승인키 발급
+			stockApprovalKey = generateApprovalKey(appKey_1, secretKey_1);
+
+			// 호가 데이터용 승인키 발급
+			hogaApprovalKey = generateApprovalKey(appKey_2, secretKey_2);
+
+			// 토큰 만료 시간 설정 (1일)
+			tokenExpireTime = Instant.now().plusSeconds(24 * 60 * 60).toEpochMilli();
+
+			log.info("한국투자증권 API 승인키 발급 완료");
+		} catch (Exception e) {
+			log.error("승인키 발급 실패", e);
+			throw new RuntimeException("한국투자증권 API 승인키 발급 실패", e);
+		}
+	}
+
+	/**
+	 * 개별 승인키 발급 메소드
+	 * 지정된 appKey와 secretKey를 사용하여 한투 API에 승인키 요청
+	 */
+	private String generateApprovalKey(final String appKey, final String secretKey) {
+		final HttpHeaders headers = new HttpHeaders();
+		headers.setContentType(MediaType.APPLICATION_JSON);
+
+		final Map<String, String> body = new HashMap<>();
+		body.put("grant_type", grantKey);
+		body.put("appkey", appKey);
+		body.put("secretkey", secretKey);
+
+		final HttpEntity<Map<String, String>> entity = new HttpEntity<>(body, headers);
+		final ResponseEntity<Map> response = restTemplate.postForEntity(approvalUrl, entity, Map.class);
+
+		if (response.getStatusCode().is2xxSuccessful()) {
+			final Map<String, String> responseBody = response.getBody();
+			return responseBody.get("approval_key");
+		} else {
+			throw new RuntimeException("승인키 발급 실패: " + response.getStatusCode());
+		}
+	}
+
+	/**
+	 * 토큰 유효성 검사 및 필요시 재발급
+	 * 토큰이 만료되었거나 없는 경우 새로 발급
+	 */
+	private void checkAndRefreshToken() {
+		final long currentTime = Instant.now().toEpochMilli();
+		if (tokenExpireTime == null || tokenExpireTime == 0 || currentTime > tokenExpireTime) {
+			log.info("승인키 만료, 재발급 진행");
+			generateApprovalKeys();
+		}
+	}
+
+	/**
+	 * 체결 데이터 / 호가 데이터 연결
+	 */
+	public void connectAll(final String companyCode) {
+		checkAndRefreshToken();  // 연결 전 토큰 유효성 검사
+
+		connectStockData(companyCode);
+		connectHogaData(companyCode);
+	}
+
+	/**
+	 * 체결 데이터 WebSocket 연결
+	 */
+	private void connectStockData(final String stockCode) {
+		connect(stockApprovalKey, stockCode, stockWsUrl, "H0STCNT0", this::handleStockDataMessage);
 	}
 
 	/**
 	 * 호가 데이터 WebSocket 연결
 	 */
-	public void connectHogaData(String stockCode) {
-		connect(APPROVAL_KEY_2, stockCode, KIS_HOGA_URL, "H0STASP0", this::handleHogaDataMessage);
+	private void connectHogaData(final String stockCode) {
+		connect(hogaApprovalKey, stockCode, hogaWsUrl, "H0STASP0", this::handleHogaDataMessage);
 	}
 
 	/**
 	 * WebSocket 연결 공통 메서드
 	 */
-	private void connect(String key, String stockCode, String url, String trId, MessageHandler messageHandler) {
-		WebSocketClient client = new StandardWebSocketClient();
-		String sessionKey = generateSessionKey(trId, stockCode);
+	private void connect(final String key, final String stockCode, final String url, final String trId,
+			final MessageHandler messageHandler) {
+		final WebSocketClient client = new StandardWebSocketClient();
+		final String sessionKey = generateSessionKey(trId, stockCode);
 
-		WebSocketHandler handler = new WebSocketHandler() {
+		final WebSocketHandler handler = new WebSocketHandler() {
 			@Override
-			public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+			public void afterConnectionEstablished(final WebSocketSession session) throws Exception {
 				log.info("Connected to KIS WebSocket server: {} for stock {}", url, stockCode);
 				sessions.put(sessionKey, session);
 				sendSubscribeMessage(key, session, stockCode, trId);
 			}
 
 			@Override
-			public void handleMessage(WebSocketSession session, WebSocketMessage<?> message) {
+			public void handleMessage(final WebSocketSession session, final WebSocketMessage<?> message) {
 				try {
-					String payload = (String)message.getPayload();
+					final String payload = (String)message.getPayload();
 					log.info(payload);
 
 					// 연결 확인 응답 메시지인지 확인
@@ -107,12 +212,12 @@ public class KIWebSocketClient {
 			}
 
 			@Override
-			public void handleTransportError(WebSocketSession session, Throwable exception) {
+			public void handleTransportError(final WebSocketSession session, final Throwable exception) {
 				log.error("Transport error: ", exception);
 			}
 
 			@Override
-			public void afterConnectionClosed(WebSocketSession session, CloseStatus closeStatus) {
+			public void afterConnectionClosed(final WebSocketSession session, final CloseStatus closeStatus) {
 				log.info("Connection closed: {}", closeStatus);
 				sessions.remove(sessionKey);
 
@@ -140,15 +245,16 @@ public class KIWebSocketClient {
 	/**
 	 * 세션 키 생성
 	 */
-	private String generateSessionKey(String trId, String stockCode) {
+	private String generateSessionKey(final String trId, final String stockCode) {
 		return trId + "_" + stockCode;
 	}
 
 	/**
 	 * 재연결 스케줄링
+	 * 연결이 끊어진 경우 5초 후 재연결 시도
 	 */
-	private void scheduleReconnect(String key, String stockCode, String url, String trId,
-			MessageHandler messageHandler) {
+	private void scheduleReconnect(final String key, final String stockCode, final String url, final String trId,
+			final MessageHandler messageHandler) {
 		log.info("재연결 진행, 5초 후 시도");
 		try {
 			Thread.sleep(5000); // 5초 대기
@@ -161,45 +267,42 @@ public class KIWebSocketClient {
 	/**
 	 * 구독 메시지 전송
 	 */
-	private void sendSubscribeMessage(String key, WebSocketSession session, String stockCode, String trId) throws
-			IOException {
-		JSONObject request = createSubscribeRequest(key, stockCode, trId);
+	private void sendSubscribeMessage(final String key, final WebSocketSession session, final String stockCode,
+			final String trId) throws IOException {
+		final JSONObject request = createSubscribeRequest(key, stockCode, trId);
 		session.sendMessage(new TextMessage(request.toString()));
 	}
 
 	/**
 	 * 구독 요청 생성
 	 */
-	private JSONObject createSubscribeRequest(String key, String stockCode, String trId) {
-		JSONObject header = new JSONObject();
+	private JSONObject createSubscribeRequest(final String key, final String stockCode, final String trId) {
+		final JSONObject header = new JSONObject();
 		header.put("approval_key", key);
 		header.put("custtype", "P");
 		header.put("tr_type", "1");
 		header.put("content-type", "utf-8");
 
-		JSONObject input = new JSONObject();
+		final JSONObject input = new JSONObject();
 		input.put("tr_id", trId);
 		input.put("tr_key", stockCode);
 
-		JSONObject body = new JSONObject();
+		final JSONObject body = new JSONObject();
 		body.put("input", input);
 
-		JSONObject request = new JSONObject();
+		final JSONObject request = new JSONObject();
 		request.put("header", header);
 		request.put("body", body);
-
-		// 전송할 메시지 형식 로깅
-		log.info("Subscribe request message: {}", request.toString());
 
 		return request;
 	}
 
 	/**
-	 * 연결 해제
+	 * 특정 연결 해제
 	 */
-	public void disconnect(String trId, String stockCode) {
-		String sessionKey = generateSessionKey(trId, stockCode);
-		WebSocketSession session = sessions.get(sessionKey);
+	public void disconnect(final String trId, final String stockCode) {
+		final String sessionKey = generateSessionKey(trId, stockCode);
+		final WebSocketSession session = sessions.get(sessionKey);
 
 		if (session != null && session.isOpen()) {
 			try {
@@ -216,7 +319,7 @@ public class KIWebSocketClient {
 	 * 모든 연결 해제
 	 */
 	public void disconnectAll() {
-		for (WebSocketSession session : sessions.values()) {
+		for (final WebSocketSession session : sessions.values()) {
 			if (session.isOpen()) {
 				try {
 					session.close();
@@ -257,7 +360,7 @@ public class KIWebSocketClient {
 	/**
 	 * 호가 데이터 메시지 처리
 	 */
-	private void handleHogaDataMessage(String stockCode, String payload) {
+	private void handleHogaDataMessage(final String stockCode, final String payload) {
 		try {
 			final KIStockHogaDto stockData = parseKisHogaData(payload);
 
@@ -300,30 +403,30 @@ public class KIWebSocketClient {
 	/**
 	 * 주식 데이터 파싱
 	 */
-	private KIStockDto parseKisData(String rawData) {
+	private KIStockDto parseKisData(final String rawData) {
 		try {
-			String[] sections = rawData.split("\\|");
+			final String[] sections = rawData.split("\\|");
 			if (sections.length < 4) {
 				log.error("잘못된 데이터 형식: {}", rawData);
 				throw new IllegalArgumentException("잘못된 데이터 형식");
 			}
 
-			String[] fields = sections[3].split("\\^");
-			KIStockDto data = new KIStockDto();
+			final String[] fields = sections[3].split("\\^");
+			final KIStockDto data = new KIStockDto();
 
 			// 기본 정보 설정
 			try {
 				// 날짜 정보 파싱
 				// 현재 날짜 가져오기 (체결 시간은 당일 데이터만 제공)
-				LocalDate today = LocalDate.now();
+				final LocalDate today = LocalDate.now();
 
 				// 시간 파싱
-				String hour = fields[1].substring(0, 2);
-				String minute = fields[1].substring(2, 4);
-				String second = fields[1].substring(4, 6);
+				final String hour = fields[1].substring(0, 2);
+				final String minute = fields[1].substring(2, 4);
+				final String second = fields[1].substring(4, 6);
 
 				// LocalDateTime 생성
-				LocalDateTime time = LocalDateTime.of(
+				final LocalDateTime time = LocalDateTime.of(
 						today.getYear(),
 						today.getMonth(),
 						today.getDayOfMonth(),
@@ -335,7 +438,7 @@ public class KIWebSocketClient {
 				data.setTime(time.toEpochSecond(ZoneOffset.UTC));
 
 				// 숫자 데이터 파싱 시 DecimalFormat 사용
-				DecimalFormat df = new DecimalFormat("#.##");
+				final DecimalFormat df = new DecimalFormat("#.##");
 				df.setParseBigDecimal(true);
 
 				// 가격 정보 설정
@@ -364,36 +467,36 @@ public class KIWebSocketClient {
 	/**
 	 * 호가 데이터 파싱
 	 */
-	private KIStockHogaDto parseKisHogaData(String rawData) {
+	private KIStockHogaDto parseKisHogaData(final String rawData) {
 		try {
-			String[] sections = rawData.split("\\|");
+			final String[] sections = rawData.split("\\|");
 			if (sections.length < 4) {
 				log.error("잘못된 데이터 형식: {}", rawData);
 				throw new IllegalArgumentException("잘못된 데이터 형식");
 			}
 
-			String[] fields = sections[3].split("\\^");
+			final String[] fields = sections[3].split("\\^");
 
 			// 매도호가(ASKP) 설정 (1-10)
-			List<BigDecimal> askPrices = new ArrayList<>();
+			final List<BigDecimal> askPrices = new ArrayList<>();
 			for (int i = 0; i < 10; i++) {
 				askPrices.add(new BigDecimal(fields[3 + i]));
 			}
 
 			// 매수호가(BIDP) 설정 (1-10)
-			List<BigDecimal> bidPrices = new ArrayList<>();
+			final List<BigDecimal> bidPrices = new ArrayList<>();
 			for (int i = 0; i < 10; i++) {
 				bidPrices.add(new BigDecimal(fields[13 + i]));
 			}
 
 			// 매도호가 잔량(ASKP_RSQN) 설정 (1-10)
-			List<BigDecimal> askRemains = new ArrayList<>();
+			final List<BigDecimal> askRemains = new ArrayList<>();
 			for (int i = 0; i < 10; i++) {
 				askRemains.add(new BigDecimal(fields[23 + i]));
 			}
 
 			// 매수호가 잔량(BIDP_RSQN) 설정 (1-10)
-			List<BigDecimal> bidRemains = new ArrayList<>();
+			final List<BigDecimal> bidRemains = new ArrayList<>();
 			for (int i = 0; i < 10; i++) {
 				bidRemains.add(new BigDecimal(fields[33 + i]));
 			}
@@ -429,8 +532,10 @@ public class KIWebSocketClient {
 		}
 	}
 
-	// Double 파싱 유틸리티 함수 - 빈 문자열이나 null 처리
-	private Double parseDouble(String value) {
+	/**
+	 * Double 파싱 유틸리티 함수 - 빈 문자열이나 null 처리
+	 */
+	private Double parseDouble(final String value) {
 		if (value == null || value.trim().isEmpty()) {
 			return 0.0;
 		}
@@ -442,8 +547,10 @@ public class KIWebSocketClient {
 		}
 	}
 
-	// Long 파싱 유틸리티 함수 - 빈 문자열이나 null 처리
-	private Long parseLong(String value) {
+	/**
+	 * Long 파싱 유틸리티 함수 - 빈 문자열이나 null 처리
+	 */
+	private Long parseLong(final String value) {
 		if (value == null || value.trim().isEmpty()) {
 			return 0L;
 		}
@@ -457,6 +564,7 @@ public class KIWebSocketClient {
 
 	/**
 	 * 메시지 핸들러 인터페이스
+	 * WebSocket으로부터 수신된 메시지를 처리하기 위한 함수형 인터페이스
 	 */
 	@FunctionalInterface
 	private interface MessageHandler {

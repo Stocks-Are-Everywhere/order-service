@@ -20,11 +20,11 @@ import lombok.RequiredArgsConstructor;
 public class KIStockDataController {
 	private final KIStockDataService stockDataService;
 
-	@Operation(summary = "한국투자 실시간 채결가 조회 start")
+	@Operation(summary = "한국투자 실시간 채결가 / 호가 조회 start")
 	@PostMapping("/subscribe/{code}")
-	public ResponseEntity<String> subscribeStock(@PathVariable(name = "code") String code) {
+	public ResponseEntity<String> subscribe(@PathVariable(name = "code") String code) {
 		try {
-			stockDataService.startStockDataStream(code);
+			stockDataService.startAllStream(code);
 			return ResponseEntity.ok("Connected to stock: " + code);
 		} catch (Exception e) {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -32,35 +32,11 @@ public class KIStockDataController {
 		}
 	}
 
-	@Operation(summary = "한국투자 실시간 채결가 조회 stop")
+	@Operation(summary = "한국투자 실시간 채결가 / 호가 조회 stop")
 	@PostMapping("/unsubscribe/{code}")
-	public ResponseEntity<String> unsubscribeStock(@PathVariable(name = "code") String code) {
+	public ResponseEntity<String> unsubscribe(@PathVariable(name = "code") String code) {
 		try {
-			stockDataService.stopStockDataStream(code);
-			return ResponseEntity.ok("Disconnected from stock: " + code);
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body("Disconnection failed: " + e.getMessage());
-		}
-	}
-
-	@Operation(summary = "한국투자 실시간 채결가 조회 start")
-	@PostMapping("/subscribe/hoga/{code}")
-	public ResponseEntity<String> subscribeHoga(@PathVariable(name = "code") String code) {
-		try {
-			stockDataService.startHogaDataStream(code);
-			return ResponseEntity.ok("Connected to stock: " + code);
-		} catch (Exception e) {
-			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-					.body("Connection failed: " + e.getMessage());
-		}
-	}
-
-	@Operation(summary = "한국투자 실시간 채결가 조회 stop")
-	@PostMapping("/unsubscribe/hoga/{code}")
-	public ResponseEntity<String> unsubscribeHoga(@PathVariable(name = "code") String code) {
-		try {
-			stockDataService.stopHogaDataStream(code);
+			stockDataService.stopAllStream(code);
 			return ResponseEntity.ok("Disconnected from stock: " + code);
 		} catch (Exception e) {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

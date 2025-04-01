@@ -13,32 +13,15 @@ import lombok.extern.slf4j.Slf4j;
 public class KIStockDataService {
 	private final KIWebSocketClient kisWebSocketClient;
 
-	public void startStockDataStream(String stockCode) {
+	public void startAllStream(String stockCode) {
 		try {
-			kisWebSocketClient.connectStockData(stockCode);
+			kisWebSocketClient.connectAll(stockCode);
 		} catch (Exception e) {
 			throw new RuntimeException("Failed to start stock data stream", e);
 		}
 	}
 
-	public void stopStockDataStream(String stockCode) {
-		try {
-			kisWebSocketClient.disconnectAll();
-		} catch (Exception e) {
-			log.error("Failed to stop stock data stream for code {}: {}", stockCode, e.getMessage());
-		}
-	}
-
-	public void startHogaDataStream(String stockCode) {
-		try {
-			kisWebSocketClient.connectHogaData(stockCode);
-		} catch (Exception e) {
-			log.error("Failed to start stock data stream for code {}: {}", stockCode, e.getMessage());
-			throw new RuntimeException("Failed to start stock data stream", e);
-		}
-	}
-
-	public void stopHogaDataStream(String stockCode) {
+	public void stopAllStream(String stockCode) {
 		try {
 			kisWebSocketClient.disconnectAll();
 		} catch (Exception e) {
